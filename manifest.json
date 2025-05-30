@@ -1,17 +1,19 @@
 {
   "manifest_version": 3,
   "name": "MDPI Filter",
-  "version": "0.1.0",
-  "description": "Hide or highlight MDPI publications in literature searches",
+  "version": "0.0.1",
+  "description": "Instantly identify MDPI content. Hide/highlight MDPI papers in literature searches & visually mark their citations in any article.",
   "permissions": [
     "storage",
     "scripting",
-    "webNavigation",
-    "tabs"
+    "webNavigation"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -36,6 +38,7 @@
       "matches": ["<all_urls>"],
       "js": [
         "content/utils.js",
+        "content/dompurify.min.js",
         "content/sanitizer.js",
         "content/domains.js",
         "content/cache_manager.js",
@@ -58,5 +61,6 @@
       ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "externally_connectable": { "matches": [] }
 }
