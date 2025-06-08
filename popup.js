@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const manifest = chrome.runtime.getManifest();
         const extensionName = manifest.name;
         const extensionVersion = manifest.version;
+        const browserInfo = navigator.userAgent;
 
         const issueTitle = encodeURIComponent(`Filter Issue on: ${currentTabUrl}`);
         const issueBody = encodeURIComponent(
@@ -132,7 +133,7 @@ ${currentTabUrl}
 *   **Extension Name:** ${extensionName}
 *   **Extension Version:** ${extensionVersion}
 *   **Current Filter Mode:** ${currentMode}
-*   **Browser:** [Please fill in - e.g., Chrome 123.0.6312.122]
+*   **Browser:** ${browserInfo}
 *   **Operating System:** [Please fill in - e.g., Windows 11 / macOS Sonoma]
 
 **Screenshots (Optional but helpful):**
