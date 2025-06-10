@@ -50,7 +50,6 @@ jobs:
             -x "package-lock.json" \
             -x "README.md" \
             -x "SECURITY.md" \
-            -x "PRIVACY_POLICY.md" \
             -x "docs/*" \
             -x "logo.svg" \
             -x "*.zip"
