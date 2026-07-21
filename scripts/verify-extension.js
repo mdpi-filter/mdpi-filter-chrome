@@ -6,7 +6,9 @@ const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
 const manifestPath = path.join(root, 'manifest.json');
+const packagePath = path.join(root, 'package.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
 function fail(message) {
   console.error(`Security verification failed: ${message}`);
@@ -14,6 +16,12 @@ function fail(message) {
 }
 
 if (manifest.manifest_version !== 3) fail('manifest_version must remain 3');
+if (manifest.version !== packageJson.version) fail('manifest and package versions must match');
+
+const permissions = new Set(manifest.permissions || []);
+for (const permission of permissions) {
+  if (permission !== 'storage') fail(`unexpected privileged permission: ${permission}`);
+}
 
 const extensionCsp = manifest.content_security_policy?.extension_pages || '';
 if (!extensionCsp.includes("script-src 'self'")) fail('extension pages must use a self-only script policy');
@@ -37,12 +45,9 @@ for (const relativePath of referencedFiles) {
   if (!fs.existsSync(path.join(root, relativePath))) fail(`manifest references missing file: ${relativePath}`);
 }
 
-const manifestText = fs.readFileSync(manifestPath, 'utf8');
-if (/dompurify/i.test(manifestText)) {
-  fail('DOMPurify must not be reintroduced without a reviewed HTML sink and pinned upgrade policy');
+if (fs.existsSync(path.join(root, 'content', 'dompurify.min.js'))) {
+  fail('vendored DOMPurify must not be reintroduced into the text-only runtime');
 }
-
-const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 if (packageJson.dependencies && Object.keys(packageJson.dependencies).length > 0) {
   fail('runtime npm dependencies require an explicit security review');
 }
@@ -53,7 +58,8 @@ const dangerousPatterns = [
   { pattern: /document\.write\s*\(/, label: 'document.write()' },
   { pattern: /\.innerHTML\s*=/, label: 'innerHTML assignment' },
   { pattern: /\.outerHTML\s*=/, label: 'outerHTML assignment' },
-  { pattern: /insertAdjacentHTML\s*\(/, label: 'insertAdjacentHTML()' }
+  { pattern: /insertAdjacentHTML\s*\(/, label: 'insertAdjacentHTML()' },
+  { pattern: /%%NCBI_(?:TOOL_NAME|API_EMAIL)%%/, label: 'build-time NCBI secret placeholder' }
 ];
 
 function verifyJavaScript(absolutePath) {
@@ -62,7 +68,6 @@ function verifyJavaScript(absolutePath) {
   if (syntaxCheck.status !== 0) {
     fail(`JavaScript syntax error in ${relativePath}: ${syntaxCheck.stderr.trim()}`);
   }
-
   if (absolutePath === __filename) return;
   const source = fs.readFileSync(absolutePath, 'utf8');
   for (const { pattern, label } of dangerousPatterns) {
@@ -77,6 +82,22 @@ function verifyHtml(absolutePath) {
   if (/<script\b(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script>/i.test(source)) fail(`inline script found in ${relativePath}`);
 }
 
+function verifyWorkflow(absolutePath) {
+  const relativePath = path.relative(root, absolutePath);
+  const source = fs.readFileSync(absolutePath, 'utf8');
+  const actionUses = source.matchAll(/^\s*uses:\s*([^\s]+)\s*$/gm);
+  for (const match of actionUses) {
+    const reference = match[1];
+    if (reference.startsWith('./') || reference.startsWith('docker://')) continue;
+    if (!/@[0-9a-f]{40}(?:\s*#.*)?$/i.test(reference)) {
+      fail(`GitHub Action is not pinned to a full commit SHA in ${relativePath}: ${reference}`);
+    }
+  }
+  if (/NCBI_(?:TOOL_NAME|API_EMAIL)_SECRET/.test(source)) {
+    fail(`release workflow embeds unnecessary NCBI secrets in ${relativePath}`);
+  }
+}
+
 function walk(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'docs') continue;
@@ -84,6 +105,9 @@ function walk(directory) {
     if (entry.isDirectory()) walk(absolutePath);
     else if (entry.name.endsWith('.js')) verifyJavaScript(absolutePath);
     else if (entry.name.endsWith('.html')) verifyHtml(absolutePath);
+    else if (/\.ya?ml$/i.test(entry.name) && absolutePath.includes(`${path.sep}.github${path.sep}workflows${path.sep}`)) {
+      verifyWorkflow(absolutePath);
+    }
   }
 }
 
