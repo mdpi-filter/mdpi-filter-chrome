@@ -5,9 +5,7 @@
   "description": "__MSG_extDesc__",
   "default_locale": "en",
   "permissions": [
-    "storage",
-    "scripting",
-    "webNavigation"
+    "storage"
   ],
   "host_permissions": [
     "https://*/*"
