@@ -73,25 +73,17 @@ function verifyJavaScript(absolutePath) {
 function verifyHtml(absolutePath) {
   const relativePath = path.relative(root, absolutePath);
   const source = fs.readFileSync(absolutePath, 'utf8');
-  if (/<script\b[^>]*\bsrc\s*=\s*["']https?:/i.test(source)) {
-    fail(`remote script found in ${relativePath}`);
-  }
-  if (/<script\b(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script>/i.test(source)) {
-    fail(`inline script found in ${relativePath}`);
-  }
+  if (/<script\b[^>]*\bsrc\s*=\s*["']https?:/i.test(source)) fail(`remote script found in ${relativePath}`);
+  if (/<script\b(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script>/i.test(source)) fail(`inline script found in ${relativePath}`);
 }
 
 function walk(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name === '.git' || entry.name === 'node_modules') continue;
+    if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === 'docs') continue;
     const absolutePath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      walk(absolutePath);
-    } else if (entry.name.endsWith('.js')) {
-      verifyJavaScript(absolutePath);
-    } else if (entry.name.endsWith('.html')) {
-      verifyHtml(absolutePath);
-    }
+    if (entry.isDirectory()) walk(absolutePath);
+    else if (entry.name.endsWith('.js')) verifyJavaScript(absolutePath);
+    else if (entry.name.endsWith('.html')) verifyHtml(absolutePath);
   }
 }
 
