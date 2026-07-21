@@ -5,29 +5,42 @@
 
   const ENDPOINT = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/';
   const MDPI_DOI_PREFIX = '10.3390/';
+  const TOOL_NAME = 'mdpi-filter';
   const BATCH_SIZE = 200;
-  const MAX_IDS_PER_RUN = 1000;
-  const REQUEST_TIMEOUT_MS = 15000;
-  const TOOL_NAME = '%%NCBI_TOOL_NAME%%';
-  const MAINTAINER_EMAIL = '%%NCBI_API_EMAIL%%';
+  const MAX_IDS_PER_PAGE = 600;
+  const MAX_CACHE_ENTRIES = 1000;
+  const REQUEST_TIMEOUT_MS = 10000;
+
+  const queriedIdsThisPage = new Set();
+  let remainingLookupBudget = MAX_IDS_PER_PAGE;
 
   function normalizeId(id, idType) {
     if (typeof id !== 'string' && typeof id !== 'number') return null;
-    const value = String(id).trim();
+    let value = String(id).trim();
+    if (!value) return null;
 
     if (idType === 'pmid') {
-      return /^\d{1,20}$/.test(value) ? value : null;
+      return /^\d{1,12}$/.test(value) ? value : null;
     }
     if (idType === 'pmcid') {
-      return /^PMC\d{1,20}$/i.test(value) ? value.toUpperCase() : null;
+      value = value.toUpperCase();
+      return /^PMC\d{1,12}$/.test(value) ? value : null;
     }
     if (idType === 'doi') {
-      const withoutFragment = value.split('#', 1)[0].split('?', 1)[0].trim();
-      return /^10\.\d{4,9}\/[A-Z0-9._;()/:+-]+$/i.test(withoutFragment)
-        ? withoutFragment.toLowerCase()
-        : null;
+      value = value.split('#', 1)[0].split('?', 1)[0].trim().toLowerCase();
+      return /^10\.\d{4,9}\/[^\s"',<>&]{1,240}$/.test(value) ? value : null;
     }
     return null;
+  }
+
+  function normalizeIdsForQuery(ids, idType) {
+    if (!Array.isArray(ids)) return [];
+    const unique = new Set();
+    for (const rawId of ids) {
+      const normalized = normalizeId(rawId, idType);
+      if (normalized) unique.add(normalized);
+    }
+    return Array.from(unique);
   }
 
   function candidateRecordIds(record) {
@@ -50,14 +63,32 @@
     });
   }
 
+  function setBoundedCache(cache, key, value) {
+    if (!(cache instanceof Map)) return;
+    if (cache.has(key)) cache.delete(key);
+    cache.set(key, value);
+    while (cache.size > MAX_CACHE_ENTRIES) {
+      cache.delete(cache.keys().next().value);
+    }
+  }
+
+  function writeResult(id, value, aliases, runCache, ncbiApiCache, persist) {
+    const keys = new Set([id, ...(aliases.get(id) || [])]);
+    for (const key of keys) {
+      runCache.set(key, value);
+      if (persist) setBoundedCache(ncbiApiCache, key, value);
+    }
+  }
+
   function createRequestUrl(batch, idType) {
     const url = new URL(ENDPOINT);
-    url.searchParams.set('ids', batch.join(','));
-    url.searchParams.set('idtype', idType);
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('versions', 'no');
-    if (!TOOL_NAME.startsWith('%%')) url.searchParams.set('tool', TOOL_NAME);
-    if (!MAINTAINER_EMAIL.startsWith('%%')) url.searchParams.set('email', MAINTAINER_EMAIL);
+    url.search = new URLSearchParams({
+      ids: batch.join(','),
+      idtype: idType,
+      format: 'json',
+      versions: 'no',
+      tool: TOOL_NAME
+    }).toString();
     return url.toString();
   }
 
@@ -83,22 +114,13 @@
     }
   }
 
-  function writeResult(id, value, aliases, runCache, ncbiApiCache, persist) {
-    runCache.set(id, value);
-    for (const alias of aliases.get(id) || []) runCache.set(alias, value);
-    if (persist) {
-      ncbiApiCache.set(id, value);
-      for (const alias of aliases.get(id) || []) ncbiApiCache.set(alias, value);
-    }
-  }
-
   async function checkNcbiIdsForMdpi(ids, idType, runCache, ncbiApiCache) {
     if (window.MDPIFilterSettings?.ncbiApiEnabled === false) return false;
     if (!(runCache instanceof Map) || !(ncbiApiCache instanceof Map)) return false;
     if (!['pmid', 'pmcid', 'doi'].includes(idType) || !Array.isArray(ids)) return false;
 
     const aliases = new Map();
-    for (const rawId of ids.slice(0, MAX_IDS_PER_RUN)) {
+    for (const rawId of ids) {
       const normalized = normalizeId(rawId, idType);
       if (!normalized) continue;
       if (!aliases.has(normalized)) aliases.set(normalized, new Set());
@@ -120,8 +142,16 @@
           break;
         }
       }
-      if (found) writeResult(id, cachedValue, aliases, runCache, ncbiApiCache, true);
-      else uncachedIds.push(id);
+
+      if (found) {
+        writeResult(id, cachedValue, aliases, runCache, ncbiApiCache, true);
+      } else if (queriedIdsThisPage.has(id) || remainingLookupBudget <= 0) {
+        writeResult(id, false, aliases, runCache, ncbiApiCache, false);
+      } else {
+        queriedIdsThisPage.add(id);
+        remainingLookupBudget -= 1;
+        uncachedIds.push(id);
+      }
     }
 
     for (let offset = 0; offset < uncachedIds.length; offset += BATCH_SIZE) {
@@ -129,7 +159,6 @@
       const records = await fetchBatch(batch, idType);
 
       if (records === null) {
-        // Do not persist failures; a later page update can retry.
         for (const id of batch) writeResult(id, false, aliases, runCache, ncbiApiCache, false);
         continue;
       }
@@ -150,5 +179,8 @@
     return normalizedIds.some(id => runCache.get(id) === true);
   }
 
-  window.MDPIFilterNcbiApiHandler = { checkNcbiIdsForMdpi };
+  window.MDPIFilterNcbiApiHandler = {
+    checkNcbiIdsForMdpi,
+    normalizeIdsForQuery
+  };
 })();
