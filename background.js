@@ -4,6 +4,7 @@ const tabData = new Map();
 const MAX_REFERENCES_PER_TAB = 500;
 const MAX_REFERENCE_TEXT_LENGTH = 1000;
 const SAFE_REFERENCE_ID = /^[A-Za-z0-9_.:-]{1,256}$/;
+const SAFE_COLOR = /^#[0-9A-F]{6}$/i;
 
 function normalizeReference(reference) {
   if (!reference || typeof reference !== 'object') return null;
@@ -14,7 +15,6 @@ function normalizeReference(reference) {
     id: reference.id,
     text: reference.text.slice(0, MAX_REFERENCE_TEXT_LENGTH)
   };
-
   if (Number.isFinite(reference.number)) normalized.number = reference.number;
   if (typeof reference.doi === 'string') normalized.doi = reference.doi.slice(0, 256);
   if (typeof reference.listItemDomId === 'string' && SAFE_REFERENCE_ID.test(reference.listItemDomId)) {
@@ -25,7 +25,6 @@ function normalizeReference(reference) {
 
 function normalizeReferences(references) {
   if (!Array.isArray(references)) return [];
-
   const unique = new Map();
   for (const reference of references.slice(0, MAX_REFERENCES_PER_TAB)) {
     const normalized = normalizeReference(reference);
@@ -37,9 +36,16 @@ function normalizeReferences(references) {
 }
 
 function setBadge(tabId, count, color = '#E2211C') {
+  if (!Number.isInteger(tabId)) return;
   const numericCount = Number.isFinite(count) ? Math.max(0, Math.min(999, Math.trunc(count))) : 0;
+  const safeColor = typeof color === 'string' && SAFE_COLOR.test(color) ? color : '#E2211C';
   chrome.action.setBadgeText({ tabId, text: numericCount ? String(numericCount) : '' });
-  chrome.action.setBadgeBackgroundColor({ tabId, color });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: safeColor });
+}
+
+function clearTabData(tabId) {
+  tabData.delete(tabId);
+  setBadge(tabId, 0);
 }
 
 function storeTabReferences(tabId, references, requestedCount, color) {
@@ -57,9 +63,7 @@ async function getActiveTab() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (sender.id !== chrome.runtime.id || !message || typeof message !== 'object') {
-    return false;
-  }
+  if (sender.id !== chrome.runtime.id || !message || typeof message !== 'object') return false;
 
   if (message.type === 'mdpiUpdate') {
     const tabId = sender.tab?.id;
@@ -67,7 +71,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const references = Array.isArray(data.references) ? data.references : [];
     const count = Number.isFinite(data.badgeCount) ? data.badgeCount : references.length;
     storeTabReferences(tabId, references, count, data.color);
-    sendResponse({ success: true });
+    sendResponse({ success: Number.isInteger(tabId) });
     return false;
   }
 
@@ -91,7 +95,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'getMdpiReferences') {
     getActiveTab()
-      .then(tab => sendResponse({ references: tab?.id ? (tabData.get(tab.id) || []) : [] }))
+      .then(tab => sendResponse({ references: Number.isInteger(tab?.id) ? (tabData.get(tab.id) || []) : [] }))
       .catch(() => sendResponse({ references: [] }));
     return true;
   }
@@ -104,7 +108,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     getActiveTab()
       .then(tab => {
-        if (!tab?.id) {
+        if (!Number.isInteger(tab?.id)) {
           sendResponse({ success: false, error: 'no-active-tab' });
           return;
         }
@@ -115,7 +119,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (chrome.runtime.lastError) {
             sendResponse({ success: false, error: 'content-script-unavailable' });
           } else {
-            sendResponse({ success: response?.status === 'scrolled' || response?.status === 'expanded-and-scrolled' });
+            const status = response?.status;
+            sendResponse({ success: status === 'scrolled' || status === 'expanded-and-scrolled' });
           }
         });
       })
@@ -124,6 +129,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return false;
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'loading') clearTabData(tabId);
 });
 
 chrome.tabs.onRemoved.addListener(tabId => {
