@@ -1,6 +1,6 @@
 {
   "name": "mdpi-filter-chrome",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "Chrome extension that identifies and manages MDPI publications.",
   "scripts": {
