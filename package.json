@@ -1,10 +1,12 @@
 {
-  "name": "mdpi-filter-chrome",
+  "name": "mdpi-filter-browser-extension",
   "version": "0.0.4",
   "private": true,
-  "description": "Chrome extension that identifies and manages MDPI publications.",
+  "description": "Cross-browser extension that identifies and manages MDPI publications.",
   "scripts": {
-    "build": "node scripts/verify-extension.js",
+    "build": "node scripts/build-all.js",
+    "build:target": "node scripts/build-target.js",
+    "verify": "node scripts/verify-extension.js",
     "test": "node scripts/verify-extension.js && node --test tests/*.test.js"
   },
   "license": "AGPL-3.0-or-later"

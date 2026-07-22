@@ -1,0 +1,11 @@
+{
+  "forbiddenTerms": [
+    "Chrome Web Store",
+    "Google Chrome",
+    "chrome://extensions",
+    "Mozilla Add-ons",
+    "Firefox Add-ons",
+    "Safari Extensions Gallery",
+    "Apple App Store"
+  ]
+}

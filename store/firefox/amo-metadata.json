@@ -1,0 +1,15 @@
+{
+  "summary": {
+    "en-US": "Identify MDPI publications in searches, references, cited-by lists, and similar-article sections."
+  },
+  "categories": [
+    "other"
+  ],
+  "homepage": {
+    "en-US": "https://mdpi-filter.pages.dev/"
+  },
+  "version": {
+    "license": "AGPL-3.0-only",
+    "approval_notes": "The submitted package is generated from the public repository without minification, bundling, remote code, or runtime npm dependencies."
+  }
+}

@@ -1,0 +1,138 @@
+name: Publish Browser Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      store:
+        description: Store receiving the verified release artifact
+        required: true
+        type: choice
+        options:
+          - chrome
+          - edge
+          - firefox
+      tag:
+        description: Existing GitHub release tag, for example v0.1.0
+        required: true
+        type: string
+      submit:
+        description: Submit the uploaded package for review/publication
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ inputs.store }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: store-${{ inputs.store }}
+    steps:
+      - name: Validate requested tag
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+(\.[0-9]+){0,3}(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            exit 1
+          fi
+
+      - name: Checkout the released source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir release-assets
+
+      - name: Verify release checksums
+        shell: bash
+        run: |
+          test -f release-assets/checksums.txt
+          (
+            cd release-assets
+            sha256sum -c checksums.txt --ignore-missing
+          )
+
+      - name: Resolve store package
+        id: package
+        shell: bash
+        env:
+          STORE: ${{ inputs.store }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          VERSION="${TAG#v}"
+          case "$STORE" in
+            chrome|edge)
+              PACKAGE="release-assets/mdpi-filter-${STORE}-v${VERSION}.zip"
+              ;;
+            firefox)
+              PACKAGE="release-assets/mdpi-filter-firefox-source-v${VERSION}.zip"
+              ;;
+            *)
+              echo "Unsupported store: $STORE" >&2
+              exit 1
+              ;;
+          esac
+          test -f "$PACKAGE"
+          echo "path=$PACKAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload or publish Chrome package
+        if: inputs.store == 'chrome'
+        env:
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          SUBMIT: ${{ inputs.submit }}
+        run: node scripts/publish-chrome.js "${{ steps.package.outputs.path }}"
+
+      - name: Upload or publish Edge package
+        if: inputs.store == 'edge'
+        env:
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_CERTIFICATION_NOTES: ${{ vars.EDGE_CERTIFICATION_NOTES }}
+          SUBMIT: ${{ inputs.submit }}
+        run: node scripts/publish-edge.js "${{ steps.package.outputs.path }}"
+
+      - name: Submit Firefox package to AMO
+        if: inputs.store == 'firefox'
+        shell: bash
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          PACKAGE: ${{ steps.package.outputs.path }}
+          SUBMIT: ${{ inputs.submit }}
+        run: |
+          if [[ "$SUBMIT" != "true" ]]; then
+            echo "AMO does not expose a useful draft-only mode through web-ext; rerun with submit enabled after reviewing the release." >&2
+            exit 1
+          fi
+          rm -rf firefox-source
+          mkdir firefox-source
+          unzip -q "$PACKAGE" -d firefox-source
+          npm exec --yes --package=web-ext@10.5.0 -- web-ext --no-input sign \
+            --source-dir firefox-source \
+            --channel listed \
+            --amo-metadata store/firefox/amo-metadata.json \
+            --api-key "$AMO_JWT_ISSUER" \
+            --api-secret "$AMO_JWT_SECRET" \
+            --approval-timeout 0

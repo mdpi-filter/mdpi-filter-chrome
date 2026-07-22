@@ -1,4 +1,4 @@
-name: Build Extension
+name: Build Browser Extensions
 
 on:
   push:
@@ -28,23 +28,15 @@ jobs:
       - name: Run security and regression tests
         run: npm test
 
-      - name: Build extension
+      - name: Build all browser targets
         run: npm run build
 
-      - name: Create and verify ZIP package
+      - name: Verify generated manifests and runtime files
+        shell: bash
         run: |
-          zip -r mdpi-filter.zip . \
-            -x "node_modules/*" \
-            -x ".git/*" \
-            -x ".github/*" \
-            -x "scripts/*" \
-            -x "tests/*" \
-            -x "package.json" \
-            -x "package-lock.json" \
-            -x "README.md" \
-            -x "SECURITY.md" \
-            -x "docs/*" \
-            -x "logo.svg" \
-            -x "*.zip"
-          unzip -t mdpi-filter.zip
-          unzip -p mdpi-filter.zip manifest.json | node -e "let s=''; process.stdin.on('data',d=>s+=d).on('end',()=>JSON.parse(s));"
+          for target in chrome edge firefox safari; do
+            test -f "dist/$target/manifest.json"
+            test -f "dist/$target/background.js"
+            test -f "dist/$target/content/content_script.js"
+            node -e "JSON.parse(require('fs').readFileSync('dist/$target/manifest.json', 'utf8'))"
+          done
