@@ -16,6 +16,14 @@ Chrome and Edge receive directly uploadable ZIP packages. Firefox and Safari are
 
 All four packages use the same runtime files. `platforms/<target>/manifest.json` contains only the target-specific manifest overlay. `store/<target>/` contains store-specific metadata. `platforms/<target>/policy.json` defines terminology that must not appear in that target's package or listing.
 
+## Stable and prerelease versions
+
+GitHub prerelease tags such as `v0.1.0-rc.1` are useful for building and inspecting candidate artifacts. They must not be uploaded to browser stores.
+
+Browser manifests accept numeric versions, so the build converts both `v0.1.0-rc.1` and `v0.1.0` to manifest version `0.1.0`, while preserving the full candidate label only as `version_name` where supported. Uploading the candidate could therefore consume the numeric version needed by the intended stable release.
+
+The **Publish Browser Store** workflow enforces this boundary and accepts only stable numeric tags such as `v0.1.0` or `v0.1.0.1`. Use prerelease tags only for GitHub artifact validation, then create a stable tag after the candidate passes testing.
+
 ## Local builds
 
 ```bash
@@ -56,7 +64,7 @@ For each environment:
 
 A release tag builds and verifies packages automatically. Store publication is a separate manual workflow so a compromised tag or build cannot immediately publish everywhere.
 
-Run publication from **Actions → Publish Browser Store → Run workflow**. Select the store, provide an existing release tag, review the package and checksum, and then choose whether to submit it for review.
+Run publication from **Actions → Publish Browser Store → Run workflow**. Select the store, provide an existing stable release tag, review the package and checksum, and then choose whether to submit it for review. Prerelease tags are rejected before any credential is used.
 
 ## Chrome Web Store setup
 
@@ -159,12 +167,13 @@ Do not archive the dedicated Edge repository before the first Edge update produc
 Migration sequence:
 
 1. Merge the multi-browser pipeline.
-2. Create and inspect a prerelease tag.
-3. Compare the generated Edge ZIP with the existing Edge package.
-4. Publish one Edge update through the protected workflow.
-5. Confirm installation, updates, permissions, and store listing links.
-6. Replace the old repository README with a migration notice pointing to this repository.
-7. Archive the old repository as read-only.
+2. Create and inspect a GitHub-only prerelease tag.
+3. Compare the generated Edge ZIP with the existing Edge package without uploading the prerelease to the store.
+4. Create a stable numeric release tag after validation.
+5. Publish one Edge update through the protected workflow.
+6. Confirm installation, updates, permissions, and store listing links.
+7. Replace the old repository README with a migration notice pointing to this repository.
+8. Archive the old repository as read-only.
 
 Do not maintain a generated code mirror unless a store reviewer specifically requires it. The store-specific package and metadata are sufficient separation; the runtime source must remain canonical here.
 
@@ -175,5 +184,6 @@ Do not maintain a generated code mirror unless a store reviewer specifically req
 - Actions are pinned to full commit hashes.
 - The release workflow publishes only artifacts that passed the test job.
 - Store workflows download the existing release artifacts and verify SHA-256 checksums instead of rebuilding.
+- Store publication rejects prerelease tags before using provider credentials.
 - Each store has separate credentials and a separate protected GitHub Environment.
 - Store submission remains independently approvable.
