@@ -12,7 +12,7 @@ on:
           - edge
           - firefox
       tag:
-        description: Existing GitHub release tag, for example v0.1.0
+        description: Existing stable GitHub release tag, for example v0.1.0
         required: true
         type: string
       submit:
@@ -33,13 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: store-${{ inputs.store }}
     steps:
-      - name: Validate requested tag
+      - name: Validate stable release tag
         shell: bash
         env:
           TAG: ${{ inputs.tag }}
         run: |
-          if [[ ! "$TAG" =~ ^v[0-9]+(\.[0-9]+){0,3}(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid release tag: $TAG" >&2
+          if [[ ! "$TAG" =~ ^v[0-9]+(\.[0-9]+){0,3}$ ]]; then
+            echo "Store publication requires a stable numeric tag such as v0.1.0; prerelease tags are rejected: $TAG" >&2
             exit 1
           fi
 
