@@ -129,11 +129,10 @@ jobs:
           rm -rf firefox-source
           mkdir firefox-source
           unzip -q "$PACKAGE" -d firefox-source
-          npm exec --yes --package=web-ext@10.5.0 -- web-ext sign \
+          npm exec --yes --package=web-ext@10.5.0 -- web-ext --no-input sign \
             --source-dir firefox-source \
             --channel listed \
             --amo-metadata store/firefox/amo-metadata.json \
             --api-key "$AMO_JWT_ISSUER" \
             --api-secret "$AMO_JWT_SECRET" \
-            --approval-timeout 0 \
-            --no-input
+            --approval-timeout 0
