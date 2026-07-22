@@ -1,8 +1,8 @@
 {
   "name": "mdpi-filter-chrome",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "private": true,
-  "description": "Chrome extension that identifies and manages MDPI publications.",
+  "description": "Browser extension for MDPI detection and explainable research-integrity signals.",
   "scripts": {
     "build": "node scripts/verify-extension.js",
     "test": "node scripts/verify-extension.js && node --test tests/*.test.js"
