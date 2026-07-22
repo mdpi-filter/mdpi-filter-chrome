@@ -32,7 +32,7 @@
     "default_popup": "popup.html"
   },
   "options_page": "options.html",
-  "homepage_url": "https://mdpi-filter.github.io/mdpi-filter-chrome/",
+  "homepage_url": "https://mdpi-filter.pages.dev/",
   "content_scripts": [
     {
       "matches": [
@@ -64,5 +64,7 @@
       "run_at": "document_idle"
     }
   ],
-  "externally_connectable": { "matches": [] }
+  "externally_connectable": {
+    "matches": []
+  }
 }
