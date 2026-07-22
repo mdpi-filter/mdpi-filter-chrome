@@ -1,0 +1,179 @@
+# Multi-browser releases and store publication
+
+This repository is the canonical source for the browser extension. A single source commit generates isolated packages for Chrome, Microsoft Edge, Firefox, and Safari.
+
+## Release outputs
+
+A tag such as `v0.1.0` creates one GitHub release containing:
+
+- `mdpi-filter-chrome-v0.1.0.zip`
+- `mdpi-filter-edge-v0.1.0.zip`
+- `mdpi-filter-firefox-source-v0.1.0.zip`
+- `mdpi-filter-safari-source-v0.1.0.zip`
+- `checksums.txt`
+
+Chrome and Edge receive directly uploadable ZIP packages. Firefox and Safari are deliberately labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
+
+All four packages use the same runtime files. `platforms/<target>/manifest.json` contains only the target-specific manifest overlay. `store/<target>/` contains store-specific metadata. `platforms/<target>/policy.json` defines terminology that must not appear in that target's package or listing.
+
+## Local builds
+
+```bash
+npm ci --ignore-scripts
+npm test
+npm run build
+```
+
+The output directories are:
+
+```text
+dist/chrome
+dist/edge
+dist/firefox
+dist/safari
+```
+
+Build one target and optionally override the release version:
+
+```bash
+npm run build:target -- --target edge --version 0.1.0
+```
+
+## GitHub Environments
+
+Create these repository environments under **Settings → Environments**:
+
+- `store-chrome`
+- `store-edge`
+- `store-firefox`
+
+For each environment:
+
+1. Enable **Required reviewers** and select the maintainer account.
+2. Prevent administrator bypass if the repository policy allows it.
+3. Restrict deployment branches and tags to protected release tags.
+4. Add only the secrets required by that store.
+
+A release tag builds and verifies packages automatically. Store publication is a separate manual workflow so a compromised tag or build cannot immediately publish everywhere.
+
+Run publication from **Actions → Publish Browser Store → Run workflow**. Select the store, provide an existing release tag, review the package and checksum, and then choose whether to submit it for review.
+
+## Chrome Web Store setup
+
+The Chrome workflow updates an existing store item through the Chrome Web Store API v2.
+
+Complete these account-level steps once:
+
+1. Enable two-step verification on the publishing Google account.
+2. In Google Cloud Console, create or select a project and enable **Chrome Web Store API**.
+3. Configure the OAuth consent screen.
+4. Create a Web application OAuth client and add `https://developers.google.com/oauthplayground` as an authorized redirect URI.
+5. In OAuth Playground, use the OAuth client and authorize the scope `https://www.googleapis.com/auth/chromewebstore`.
+6. Exchange the authorization code and save the refresh token.
+7. In the Chrome Web Store developer dashboard, record the publisher ID and extension ID.
+8. Complete the Store listing and Privacy tabs. The API cannot replace the required first-time dashboard setup.
+
+Add these secrets to `store-chrome`:
+
+```text
+CHROME_PUBLISHER_ID
+CHROME_EXTENSION_ID
+CHROME_CLIENT_ID
+CHROME_CLIENT_SECRET
+CHROME_REFRESH_TOKEN
+```
+
+With `submit=false`, the workflow uploads the verified ZIP but leaves the item unpublished. With `submit=true`, it also requests review/publication.
+
+## Microsoft Edge Add-ons setup
+
+The Edge workflow updates an existing Partner Center product through the v1.1 API-key flow.
+
+Complete these account-level steps once:
+
+1. Sign in to Partner Center with the account that owns the extension.
+2. Open **Microsoft Edge → Publish API**.
+3. Enable the new API-key experience.
+4. Select **Create API credentials**.
+5. Record the Client ID and API key when they are shown.
+6. Open the extension overview and record its Product ID GUID.
+7. Keep the existing first store submission and listing metadata in Partner Center. The update API cannot create a new product or edit listing metadata.
+
+Add these secrets to `store-edge`:
+
+```text
+EDGE_PRODUCT_ID
+EDGE_CLIENT_ID
+EDGE_API_KEY
+```
+
+Optionally add an environment variable named `EDGE_CERTIFICATION_NOTES`. The workflow otherwise uses a conservative default certification note.
+
+The Edge package and its listing are checked for references to competing stores and browser-specific installation pages before a release can be created.
+
+## Firefox Add-ons setup
+
+The Firefox workflow uses Mozilla's official `web-ext` client and the AMO v5 submission API.
+
+Complete these account-level steps once:
+
+1. Create or sign in to the addons.mozilla.org developer account.
+2. Open the AMO API credentials page.
+3. Generate an API key and secret.
+4. Review `store/firefox/amo-metadata.json`, especially the summary, category, license, and reviewer notes.
+
+Add these secrets to `store-firefox`:
+
+```text
+AMO_JWT_ISSUER
+AMO_JWT_SECRET
+```
+
+The generated Firefox manifest has the stable Manifest V3 ID:
+
+```text
+mdpi-filter@mdpi-filter.org
+```
+
+Do not change this identifier after the first submission. Firefox publication is always a real AMO submission, so the workflow requires `submit=true`.
+
+## Safari status
+
+The release workflow creates a Safari-compatible source package and removes metadata that Safari does not need. It does not publish to the App Store yet.
+
+Public Safari distribution still requires:
+
+1. Apple Developer Program membership.
+2. An App Store Connect app record.
+3. A verified physical-device test on current macOS and iOS Safari.
+4. Safari Web Extension Packager or Xcode packaging.
+5. App Store privacy disclosures, screenshots, signing, and review information.
+6. App Store Connect API access and narrowly scoped API credentials before publication automation is enabled.
+
+Until those gates are met, use the Safari source package for local compatibility testing and do not advertise it as an installable App Store release.
+
+## Migrating the dedicated Edge repository
+
+Do not archive the dedicated Edge repository before the first Edge update produced from this repository has passed certification.
+
+Migration sequence:
+
+1. Merge the multi-browser pipeline.
+2. Create and inspect a prerelease tag.
+3. Compare the generated Edge ZIP with the existing Edge package.
+4. Publish one Edge update through the protected workflow.
+5. Confirm installation, updates, permissions, and store listing links.
+6. Replace the old repository README with a migration notice pointing to this repository.
+7. Archive the old repository as read-only.
+
+Do not maintain a generated code mirror unless a store reviewer specifically requires it. The store-specific package and metadata are sufficient separation; the runtime source must remain canonical here.
+
+## Release safety properties
+
+- Store packages are built from one source commit.
+- Store-specific terms and manifests are generated, not manually copied.
+- Actions are pinned to full commit hashes.
+- The release workflow publishes only artifacts that passed the test job.
+- Store workflows download the existing release artifacts and verify SHA-256 checksums instead of rebuilding.
+- Each store has separate credentials and a separate protected GitHub Environment.
+- Store submission remains independently approvable.
