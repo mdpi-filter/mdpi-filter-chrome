@@ -73,7 +73,7 @@ async function main() {
     uploadData = await parseResponse(statusResponse, 'Chrome upload status');
   }
 
-  if (uploadData.uploadState && uploadData.uploadState !== 'SUCCEEDED') {
+  if (uploadData.uploadState !== 'SUCCEEDED') {
     throw new Error(`Chrome upload did not succeed: ${JSON.stringify(uploadData)}`);
   }
   console.log('Chrome package upload succeeded.');
