@@ -1,0 +1,16 @@
+{
+  "homepage_url": "https://mdpi-filter.pages.dev/",
+  "background": {
+    "service_worker": null,
+    "type": null,
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mdpi-filter@mdpi-filter.org",
+      "strict_min_version": "128.0"
+    }
+  }
+}
