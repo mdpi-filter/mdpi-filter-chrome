@@ -1,202 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDPI Filter Chrome Extension</title>
-    <link rel="icon" type="image/svg+xml" href="logo.svg"> <!-- Added favicon link -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            margin: 0;
-            padding: 0;
-            background-color: #f4f7f6;
-            color: #333;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 900px;
-            margin: 2em auto;
-            padding: 2em;
-            background-color: #fff;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 2em;
-            padding-bottom: 1em;
-            border-bottom: 1px solid #eee;
-        }
-        header h1 {
-            color: #2c3e50;
-            margin-bottom: 0.2em;
-        }
-        header p {
-            font-size: 1.1em;
-            color: #555;
-        }
-        nav {
-            text-align: center;
-            margin-bottom: 2em;
-        }
-        nav a {
-            margin: 0 15px;
-            color: #3498db;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        h2 {
-            color: #2980b9;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 0.3em;
-            margin-top: 1.5em;
-            position: relative; /* For positioning the anchor link */
-        }
-        /* Style for the section permalink */
-        .section-link {
-            font-size: 0.8em;
-            margin-left: 8px;
-            text-decoration: none;
-            color: #aaa;
-            opacity: 0; /* Hidden by default */
-            transition: opacity 0.2s ease-in-out;
-        }
-        h2:hover .section-link {
-            opacity: 1; /* Show on hover */
-            color: #3498db;
-        }
-        .section-link:hover {
-            text-decoration: underline;
-        }
-        ul {
-            list-style-type: disc;
-            padding-left: 20px;
-        }
-        li {
-            margin-bottom: 0.5em;
-        }
-        .button-link {
-            display: inline-block;
-            background-color: #3498db;
-            color: #fff;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 1em;
-            transition: background-color 0.3s ease;
-        }
-        .button-link:hover {
-            background-color: #2980b9;
-            color: #fff; /* Ensure text color remains white on hover */
-        }
-        footer {
-            text-align: center;
-            margin-top: 3em;
-            padding-top: 1em;
-            border-top: 1px solid #eee;
-            font-size: 0.9em;
-            color: #777;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notandia browser extension</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f4f7f6; color: #25313c; line-height: 1.6; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,.08); }
+    header, footer { text-align: center; }
+    header { border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; }
+    nav { text-align: center; margin: 1.5rem 0; }
+    nav a { margin: 0 .65rem; color: #175cd3; font-weight: 600; }
+    h2 { margin-top: 2rem; border-bottom: 2px solid #d0d5dd; padding-bottom: .3rem; }
+    .notice { padding: 1rem; border-left: 4px solid #175cd3; background: #f5f8ff; }
+    .button { display: inline-block; padding: .65rem 1rem; border-radius: 5px; background: #175cd3; color: #fff; text-decoration: none; font-weight: 700; }
+    footer { margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1rem; color: #667085; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>MDPI Filter Chrome Extension</h1>
-            <p>Instantly identify and manage publications from the publisher MDPI.</p>
-        </header>
+  <div class="container">
+    <header>
+      <h1>Notandia</h1>
+      <p>Open-source context for scholarly literature.</p>
+    </header>
 
-        <nav>
-            <a href="#about">About</a>
-            <a href="#features">Features</a>
-            <a href="#installation">Installation</a>
-            <a href="#support">Support</a>
-            <a href="https://github.com/mdpi-filter/mdpi-filter-chrome" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="PRIVACY_POLICY.html">Privacy Policy</a>
-        </nav>
+    <nav aria-label="Documentation navigation">
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+      <a href="#installation">Installation</a>
+      <a href="https://github.com/notandia/browser-extension">GitHub</a>
+      <a href="PRIVACY_POLICY.html">Privacy</a>
+    </nav>
 
-        <section id="about">
-            <h2>About MDPI Filter <a href="#about" class="section-link" title="Permalink to this section">#</a></h2>
-            <p>
-                <strong>MDPI Filter</strong> is a Chrome extension that helps you identify and manage MDPI publications.
-                It enhances your literature search by allowing you to hide or highlight MDPI results on major search
-                engines (Google, Google Scholar, PubMed, Europe PMC), using direct checks and the NCBI API.
-                Furthermore, it universally styles MDPI citations on any scholarly article you read:
-                visually distinguishing MDPI entries in bibliographies, their inline footnotes, and also within
-                "Cited By" and "Similar Articles" sections. The extension popup provides a quick overview of
-                detected MDPI references, allowing you to see a count, a list, and click to scroll to them in the document.
-            </p>
-        </section>
+    <section id="about">
+      <h2>About Notandia</h2>
+      <p><strong>Notandia</strong>, previously distributed as MDPI Filter, adds publisher context and explainable post-publication signals while you read scholarly literature.</p>
+      <p class="notice">Notandia is an independent open-source project. It is not affiliated with, authorized by, or endorsed by MDPI AG, Crossref, Retraction Watch, NCBI, browser vendors, or any publisher or data provider.</p>
+    </section>
 
-        <section id="features">
-            <h2>🔹 Key Features <a href="#features" class="section-link" title="Permalink to this section">#</a></h2>
-            <ul>
-                <li><strong>Search-site filtering:</strong>
-                    <ul>
-                        <li>Hide or Highlight MDPI links on Google Web Search, Google Scholar, PubMed, and Europe PMC.</li>
-                    </ul>
-                </li>
-                <li><strong>Universal in-page citation styling:</strong>
-                    <ul>
-                        <li>Styles MDPI reference numbers (inline footnotes) red.</li>
-                        <li>Outlines and bold-reds MDPI entries in bibliographies on any journal site.</li>
-                    </ul>
-                </li>
-                <li><strong>Popup Interaction & Overview:</strong>
-                    <ul>
-                        <li>Counts and lists MDPI references found on the current page.</li>
-                        <li>Allows clicking a reference in the popup to scroll directly to it.</li>
-                        <li>Styles MDPI entries in "Cited By" and "Similar Articles" sections.</li>
-                    </ul>
-                </li>
-            </ul>
-        </section>
+    <section id="features">
+      <h2>Features</h2>
+      <ul>
+        <li>Highlights or hides MDPI results on supported scholarly-search pages.</li>
+        <li>Identifies MDPI references and related numerical citations where page structure permits.</li>
+        <li>Optionally checks DOI metadata for formal retractions, concerns, corrections, reinstatements, withdrawals, and duplicate-publication findings.</li>
+        <li>Shows chronology, provenance, coverage, deferred checks, and unresolved identifiers without assigning a hidden quality score.</li>
+        <li>Keeps integrity lookups off by default and supports a zero-network configuration.</li>
+      </ul>
+    </section>
 
-        <section id="installation">
-            <h2>📥 Installation <a href="#installation" class="section-link" title="Permalink to this section">#</a></h2>
-            <p>The extension will be available on the Chrome Web Store soon. For now, you can install it manually:</p>
-            <ol>
-                <li>Go to the <a href="https://github.com/mdpi-filter/mdpi-filter-chrome/releases" target="_blank" rel="noopener noreferrer" class="button-link">Releases Page</a> on GitHub.</li>
-                <li>Download the <code>mdpi-filter.zip</code> file from the latest release.</li>
-                <li>Unzip the downloaded file.</li>
-                <li>Open Chrome and navigate to <code>chrome://extensions</code>.</li>
-                <li>Enable <strong>Developer mode</strong> (toggle in the top right).</li>
-                <li>Click <strong>Load unpacked</strong> and select the unzipped folder.</li>
-                <li>Pin the icon to your toolbar for easy access!</li>
-            </ol>
-            <p>
-                For developers: If you've cloned the repository, you can load the unpacked extension directly from the source folder.
-                Note that API credentials might be needed for full functionality if not using a pre-built release.
-            </p>
-        </section>
+    <section id="installation">
+      <h2>Installation and development</h2>
+      <p>Use the existing Chrome or Microsoft Edge store listing for released versions. Developers can build Chrome, Edge, Firefox, and Safari targets from the canonical repository.</p>
+      <p><a class="button" href="https://github.com/notandia/browser-extension/releases">View releases</a></p>
+    </section>
 
-        <section id="support">
-            <h2>❓ Support & Feedback <a href="#support" class="section-link" title="Permalink to this section">#</a></h2>
-            <p>
-                If you encounter any issues, have questions, or would like to suggest a feature, please visit our GitHub Issues page.
-                We appreciate your feedback to help improve the MDPI Filter extension!
-            </p>
-            <p>
-                <a href="https://github.com/mdpi-filter/mdpi-filter-chrome/issues" target="_blank" rel="noopener noreferrer" class="button-link">Go to GitHub Issues</a>
-            </p>
-        </section>
+    <section id="support">
+      <h2>Support</h2>
+      <p>Report detection problems and feature requests through the public issue tracker. Report vulnerabilities privately through GitHub Security Advisories.</p>
+      <p><a class="button" href="https://github.com/notandia/browser-extension/issues">Open the issue tracker</a></p>
+    </section>
 
-        <footer>
-            <p>&copy; <span id="currentYear"></span> MDPI Filter Project. Licensed under AGPL-3.0 (Code) and CC-BY-SA-4.0 (Logo).</p>
-            <p>
-                View <a href="PRIVACY_POLICY.html">Privacy Policy</a> |
-                Visit on <a href="https://github.com/mdpi-filter/mdpi-filter-chrome" target="_blank" rel="noopener noreferrer">GitHub</a> |
-                <a href="https://github.com/mdpi-filter/mdpi-filter-chrome/issues" target="_blank" rel="noopener noreferrer">Get Support</a>
-            </p>
-        </footer>
-    </div>
-    <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-    </script>
+    <footer>
+      <p>Notandia · AGPL-3.0-or-later code · CC BY-SA 4.0 original logo and documentation where stated.</p>
+    </footer>
+  </div>
 </body>
 </html>
