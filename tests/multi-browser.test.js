@@ -34,18 +34,22 @@ test('one source tree generates isolated browser packages', () => {
       assert.equal(manifest.version_name, '1.2.3-beta.1');
       assert.equal(manifest.homepage_url, 'https://mdpi-filter.pages.dev/');
       assert.deepEqual(manifest.permissions, ['storage']);
+      assert.ok(manifest.content_scripts[0].js.includes('content/integrity_scanner.js'));
     }
 
     assert.equal(chrome.background.service_worker, 'background.js');
     assert.equal(edge.background.service_worker, 'background.js');
-    assert.deepEqual(firefox.background.scripts, ['background.js']);
+    assert.deepEqual(firefox.background.scripts, ['shared/integrity.js', 'background.js']);
     assert.equal(Object.hasOwn(firefox.background, 'service_worker'), false);
     assert.equal(Object.hasOwn(firefox.background, 'type'), false);
     assert.equal(firefox.browser_specific_settings.gecko.id, 'mdpi-filter@mdpi-filter.org');
+    assert.deepEqual(firefox.browser_specific_settings.gecko.data_collection_permissions.optional, ['websiteContent']);
     assert.equal(Object.hasOwn(safari, 'externally_connectable'), false);
 
     for (const target of ['chrome', 'edge', 'firefox', 'safari']) {
       assert.equal(fs.existsSync(path.join(DIST, target, 'background.js')), true);
+      assert.equal(fs.existsSync(path.join(DIST, target, 'shared', 'integrity.js')), true);
+      assert.equal(fs.existsSync(path.join(DIST, target, 'content', 'integrity_scanner.js')), true);
       assert.equal(fs.existsSync(path.join(DIST, target, 'content', 'content_script.js')), true);
       assert.equal(fs.existsSync(path.join(DIST, target, 'scripts')), false);
       assert.equal(fs.existsSync(path.join(DIST, target, 'tests')), false);

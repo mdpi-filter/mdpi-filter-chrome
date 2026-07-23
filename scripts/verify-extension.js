@@ -30,6 +30,7 @@ if ((manifest.externally_connectable?.matches || []).length > 0) fail('externall
 
 const referencedFiles = new Set();
 if (manifest.background?.service_worker) referencedFiles.add(manifest.background.service_worker);
+for (const backgroundScript of manifest.background?.scripts || []) referencedFiles.add(backgroundScript);
 if (manifest.action?.default_popup) referencedFiles.add(manifest.action.default_popup);
 if (manifest.options_page) referencedFiles.add(manifest.options_page);
 for (const contentScript of manifest.content_scripts || []) {
@@ -45,6 +46,7 @@ for (const relativePath of referencedFiles) {
   if (!fs.existsSync(path.join(root, relativePath))) fail(`manifest references missing file: ${relativePath}`);
 }
 
+if (!fs.existsSync(path.join(root, 'shared', 'integrity.js'))) fail('shared integrity normalization module is missing');
 if (fs.existsSync(path.join(root, 'content', 'dompurify.min.js'))) {
   fail('vendored DOMPurify must not be reintroduced into the text-only runtime');
 }
@@ -65,9 +67,7 @@ const dangerousPatterns = [
 function verifyJavaScript(absolutePath) {
   const relativePath = path.relative(root, absolutePath);
   const syntaxCheck = spawnSync(process.execPath, ['--check', absolutePath], { encoding: 'utf8' });
-  if (syntaxCheck.status !== 0) {
-    fail(`JavaScript syntax error in ${relativePath}: ${syntaxCheck.stderr.trim()}`);
-  }
+  if (syntaxCheck.status !== 0) fail(`JavaScript syntax error in ${relativePath}: ${syntaxCheck.stderr.trim()}`);
   if (absolutePath === __filename) return;
   const source = fs.readFileSync(absolutePath, 'utf8');
   for (const { pattern, label } of dangerousPatterns) {
@@ -89,9 +89,7 @@ function verifyWorkflow(absolutePath) {
   for (const match of actionUses) {
     const reference = match[1];
     if (reference.startsWith('./') || reference.startsWith('docker://')) continue;
-    if (!/@[0-9a-f]{40}$/i.test(reference)) {
-      fail(`GitHub Action is not pinned to a full commit SHA in ${relativePath}: ${reference}`);
-    }
+    if (!/@[0-9a-f]{40}$/i.test(reference)) fail(`GitHub Action is not pinned to a full commit SHA in ${relativePath}: ${reference}`);
   }
   if (/NCBI_(?:TOOL_NAME|API_EMAIL)_SECRET/.test(source)) {
     fail(`release workflow embeds unnecessary NCBI secrets in ${relativePath}`);

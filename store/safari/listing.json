@@ -1,6 +1,6 @@
 {
   "name": "MDPI Filter",
-  "summary": "Identify MDPI publications in searches, references, cited-by lists, and similar-article sections.",
+  "summary": "Identify MDPI publications and optionally check article and reference DOIs for formal post-publication updates.",
   "homepage": "https://mdpi-filter.pages.dev/",
-  "privacyPolicy": "https://mdpi-filter.pages.dev/privacy/safari"
+  "privacyPolicy": "https://mdpi-filter.pages.dev/privacy/safari/"
 }
