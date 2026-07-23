@@ -1,15 +1,15 @@
 # Multi-browser releases and store publication
 
-This repository is the canonical source for the browser extension. A single source commit generates isolated packages for Chrome, Microsoft Edge, Firefox, and Safari.
+This repository is the canonical source for the Notandia browser extension. A single source commit generates isolated packages for Chrome, Microsoft Edge, Firefox, and Safari.
 
 ## Release outputs
 
 A tag such as `v0.1.0` creates one GitHub release containing:
 
-- `mdpi-filter-chrome-v0.1.0.zip`
-- `mdpi-filter-edge-v0.1.0.zip`
-- `mdpi-filter-firefox-source-v0.1.0.zip`
-- `mdpi-filter-safari-source-v0.1.0.zip`
+- `notandia-chrome-v0.1.0.zip`
+- `notandia-edge-v0.1.0.zip`
+- `notandia-firefox-source-v0.1.0.zip`
+- `notandia-safari-source-v0.1.0.zip`
 - `checksums.txt`
 
 The Edge ZIP is directly uploadable. The Chrome ZIP is the checksummed canonical package input: because Verified CRX Uploads are enabled, the protected `store-chrome` workflow signs that ZIP with the registered private key and uploads a generated `.crx`. Firefox and Safari are deliberately labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
@@ -68,7 +68,7 @@ Run publication from **Actions → Publish Browser Store → Run workflow**. Sel
 
 ## Chrome Web Store setup
 
-The Chrome workflow updates an existing store item through the Chrome Web Store API v2 and supports the item's Verified CRX Uploads requirement.
+The Chrome workflow updates the existing store item through the Chrome Web Store API v2 and supports the item's Verified CRX Uploads requirement. The Notandia rebrand must be published as an update to that item; do not create a replacement listing or change the registered CRX key.
 
 Complete these account-level steps once:
 
@@ -109,7 +109,7 @@ For the strongest possible separation, keep the signing key entirely offline and
 
 ## Microsoft Edge Add-ons setup
 
-The Edge workflow updates an existing Partner Center product through the v1.1 API-key flow.
+The Edge workflow updates the existing Partner Center product through the v1.1 API-key flow. The Notandia rebrand must remain on that product so existing users receive the update.
 
 Complete these account-level steps once:
 
@@ -151,13 +151,15 @@ AMO_JWT_ISSUER
 AMO_JWT_SECRET
 ```
 
-The generated Firefox manifest has the stable Manifest V3 ID:
+The generated Firefox manifest retains the released Manifest V3 ID:
 
 ```text
 mdpi-filter@mdpi-filter.org
 ```
 
-Do not change this identifier after the first submission. Firefox publication is always a real AMO submission, so the workflow requires `submit=true`.
+This is a legacy compatibility identifier, not the public product name. Do not change it: Notandia must update the same signed add-on identity. Firefox publication is always a real AMO submission, so the workflow requires `submit=true`.
+
+See [Identity compatibility](IDENTITY_COMPATIBILITY.md) before changing any extension or store identifier.
 
 ## Safari status
 
@@ -176,17 +178,17 @@ Until those gates are met, use the Safari source package for local compatibility
 
 ## Migrating the dedicated Edge repository
 
-Do not archive the dedicated Edge repository before the first Edge update produced from this repository has passed certification.
+Do not archive `notandia/microsoft-edge` before the first Edge update produced from this repository has passed certification.
 
 Migration sequence:
 
-1. Merge the multi-browser pipeline.
-2. Create and inspect a GitHub-only prerelease tag.
-3. Compare the generated Edge ZIP with the existing Edge package without uploading the prerelease to the store.
-4. Create a stable numeric release tag after validation.
-5. Publish one Edge update through the protected workflow.
-6. Confirm installation, updates, permissions, and store listing links.
-7. Replace the old repository README with a migration notice pointing to this repository.
+1. Create and inspect a GitHub-only prerelease tag.
+2. Compare the generated Edge ZIP with the existing Edge package without uploading the prerelease to the store.
+3. Create a stable numeric release tag after validation.
+4. Publish one Edge update through the protected workflow.
+5. Confirm installation, updates, permissions, and store listing links.
+6. Replace the dedicated repository README with a migration notice pointing to `notandia/browser-extension`.
+7. Close or supersede any remaining implementation pull requests in the dedicated repository.
 8. Archive the old repository as read-only.
 
 Do not maintain a generated code mirror unless a store reviewer specifically requires it. The store-specific package and metadata are sufficient separation; the runtime source must remain canonical here.
