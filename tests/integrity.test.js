@@ -93,20 +93,31 @@ test('request-start limiter spaces concurrent callers', async () => {
   assert.deepEqual(sleeps, [250, 250, 250, 250]);
 });
 
-test('integrity network behavior is explicit opt-in', () => {
+test('integrity network behavior is explicit opt-in and cancellable', () => {
   const scanner = fs.readFileSync(path.join(root, 'content', 'integrity_scanner.js'), 'utf8');
   const popup = fs.readFileSync(path.join(root, 'popup.js'), 'utf8');
+  const background = fs.readFileSync(path.join(root, 'background.js'), 'utf8');
   assert.match(scanner, /integrityLookupsEnabled:\s*false/);
   assert.match(scanner, /integrityLookupsEnabled !== true/);
   assert.match(popup, /integrityLookupsEnabled:\s*false/);
   assert.match(popup, /integrityLookupsEnabled === true/);
+  assert.match(background, /function cancelIntegrityScan/);
+  assert.match(background, /controller\.abort\(\)/);
+  assert.match(background, /hasIntegrityTransmissionConsent/);
 });
 
 test('all browser targets load the integrity runtime safely', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
   const firefox = JSON.parse(fs.readFileSync(path.join(root, 'platforms', 'firefox', 'manifest.json'), 'utf8'));
+  const popup = fs.readFileSync(path.join(root, 'popup.js'), 'utf8');
   assert.equal(manifest.background.service_worker, 'background.js');
   assert.equal(Object.hasOwn(manifest.background, 'type'), false);
   assert.ok(manifest.content_scripts[0].js.includes('content/integrity_scanner.js'));
   assert.deepEqual(firefox.background.scripts.slice(0, 2), ['shared/integrity.js', 'background.js']);
+  assert.equal(firefox.browser_specific_settings.gecko.strict_min_version, '140.0');
+  assert.equal(firefox.browser_specific_settings.gecko_android.strict_min_version, '142.0');
+  assert.deepEqual(firefox.browser_specific_settings.gecko.data_collection_permissions.required, ['none']);
+  assert.deepEqual(firefox.browser_specific_settings.gecko.data_collection_permissions.optional, ['websiteContent']);
+  assert.match(popup, /permissions\.request\(\{ data_collection: \['websiteContent'\] \}\)/);
+  assert.match(popup, /permissions\.remove\(\{ data_collection: \['websiteContent'\] \}\)/);
 });
