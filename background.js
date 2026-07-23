@@ -1,9 +1,6 @@
 'use strict';
 
-if (!globalThis.MDPIIntegrity && typeof importScripts === 'function') {
-  importScripts('shared/integrity.js');
-}
-
+if (!globalThis.MDPIIntegrity && typeof importScripts === 'function') importScripts('shared/integrity.js');
 const integrityApi = globalThis.MDPIIntegrity;
 if (!integrityApi) throw new Error('Integrity runtime failed to load');
 
@@ -63,9 +60,7 @@ function normalizeReferences(references) {
 function normalizeIntegrityInput(data) {
   const unique = new Map();
   const pageDoi = normalizeDOI(data?.pageDoi || '');
-  if (pageDoi) {
-    unique.set(pageDoi, { id: 'current-article', kind: 'current-article', number: null, doi: pageDoi, text: 'Current article' });
-  }
+  if (pageDoi) unique.set(pageDoi, { id: 'current-article', kind: 'current-article', number: null, doi: pageDoi, text: 'Current article' });
   const references = Array.isArray(data?.references) ? data.references : [];
   for (const reference of references.slice(0, MAX_INTEGRITY_REFERENCES)) {
     if (!reference || typeof reference !== 'object') continue;
@@ -140,6 +135,18 @@ async function getActiveTab() {
   return tabs[0] || null;
 }
 
+async function hasIntegrityTransmissionConsent() {
+  const optional = chrome.runtime.getManifest().browser_specific_settings?.gecko?.data_collection_permissions?.optional;
+  if (!Array.isArray(optional) || !optional.includes('websiteContent')) return true;
+  if (!globalThis.browser?.permissions) return false;
+  try {
+    const permissions = await browser.permissions.getAll();
+    return Array.isArray(permissions.data_collection) && permissions.data_collection.includes('websiteContent');
+  } catch {
+    return false;
+  }
+}
+
 async function fetchCrossrefRecord(doi, scan) {
   const cached = integrityCache.get(doi);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
@@ -172,11 +179,7 @@ async function fetchCrossrefRecord(doi, scan) {
     return value;
   } catch (error) {
     if (scan.cancelled || error?.name === 'AbortError') return { lookupStatus: 'cancelled', events: [] };
-    return {
-      lookupStatus: 'failed',
-      events: [],
-      error: error instanceof Error ? error.message.slice(0, 160) : 'Crossref lookup failed'
-    };
+    return { lookupStatus: 'failed', events: [], error: error instanceof Error ? error.message.slice(0, 160) : 'Crossref lookup failed' };
   } finally {
     clearTimeout(timeout);
     scan.controllers.delete(controller);
@@ -188,8 +191,7 @@ async function mapWithConcurrency(values, concurrency, worker) {
   let nextIndex = 0;
   async function run() {
     while (nextIndex < values.length) {
-      const index = nextIndex;
-      nextIndex += 1;
+      const index = nextIndex++;
       results[index] = await worker(values[index], index);
     }
   }
@@ -280,7 +282,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'integrityScan') {
     const tabId = sender.tab?.id;
-    if (Number.isInteger(tabId)) void processIntegrityScan(tabId, message.data || {});
+    if (Number.isInteger(tabId)) {
+      void hasIntegrityTransmissionConsent().then(granted => {
+        if (granted) void processIntegrityScan(tabId, message.data || {});
+        else {
+          cancelIntegrityScan(tabId);
+          integrityTabData.delete(tabId);
+          refreshBadge(tabId);
+        }
+      });
+    }
     sendResponse({ success: Number.isInteger(tabId) });
     return false;
   }
@@ -337,5 +348,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'loading') clearTabData(tabId);
 });
-
 chrome.tabs.onRemoved.addListener(tabId => clearTabData(tabId));
