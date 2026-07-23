@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
 
 function required(name) {
   const value = process.env[name];
@@ -28,7 +29,10 @@ async function sleep(milliseconds) {
 
 async function main() {
   const packagePath = process.argv[2];
-  if (!packagePath || !fs.existsSync(packagePath)) throw new Error('A valid Chrome package path is required');
+  if (!packagePath || !fs.existsSync(packagePath)) throw new Error('A valid Chrome CRX package path is required');
+  if (path.extname(packagePath).toLowerCase() !== '.crx') {
+    throw new Error('Verified CRX Uploads are enabled: the Chrome package must be a signed .crx file');
+  }
 
   const publisherId = required('CHROME_PUBLISHER_ID');
   const extensionId = required('CHROME_EXTENSION_ID');
@@ -58,12 +62,14 @@ async function main() {
       method: 'POST',
       headers: {
         Authorization: authorization,
-        'Content-Type': 'application/zip'
+        'Content-Type': 'application/x-chrome-extension',
+        'X-Goog-Upload-Protocol': 'raw',
+        'X-Goog-Upload-File-Name': path.basename(packagePath)
       },
       body: fs.readFileSync(packagePath)
     }
   );
-  let uploadData = await parseResponse(uploadResponse, 'Chrome package upload');
+  let uploadData = await parseResponse(uploadResponse, 'Chrome CRX package upload');
 
   for (let attempt = 0; uploadData.uploadState === 'UPLOAD_IN_PROGRESS' && attempt < 60; attempt += 1) {
     await sleep(10_000);
@@ -76,7 +82,7 @@ async function main() {
   if (uploadData.uploadState !== 'SUCCEEDED') {
     throw new Error(`Chrome upload did not succeed: ${JSON.stringify(uploadData)}`);
   }
-  console.log('Chrome package upload succeeded.');
+  console.log('Chrome verified CRX upload succeeded.');
 
   if (!submit) {
     console.log('Chrome publication was not requested; the uploaded draft remains unpublished.');
