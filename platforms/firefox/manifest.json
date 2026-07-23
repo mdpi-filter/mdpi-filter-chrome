@@ -4,6 +4,7 @@
     "service_worker": null,
     "type": null,
     "scripts": [
+      "shared/integrity.js",
       "background.js"
     ]
   },
