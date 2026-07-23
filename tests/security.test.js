@@ -105,7 +105,7 @@ test('NCBI lookups validate, deduplicate, omit credentials, and enforce page bud
   assert.equal(new Set(queriedIds).size, 600);
   for (const request of requests) {
     const parsed = new URL(request.url);
-    assert.equal(parsed.searchParams.get('tool'), 'mdpi-filter');
+    assert.equal(parsed.searchParams.get('tool'), 'notandia');
     assert.equal(parsed.searchParams.has('email'), false);
     assert.equal(request.options.credentials, 'omit');
     assert.equal(request.options.referrerPolicy, 'no-referrer');
@@ -122,6 +122,7 @@ test('manifest and package maintain the converged least-privilege contract', () 
   assert.equal(manifest.manifest_version, 3);
   assert.deepEqual(manifest.permissions, ['storage']);
   assert.equal(manifest.version, packageJson.version);
+  assert.equal(packageJson.name, 'notandia-browser-extension');
   assert.equal(fs.existsSync(path.join(ROOT, 'content', 'dompurify.min.js')), false);
   assert.equal(Object.keys(packageJson.dependencies || {}).length, 0);
   assert.ok(manifest.content_scripts[0].js.includes('content/secure_message_handler.js'));
