@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "MDPI Filter",
+    "message": "Notandia",
     "description": "The name of the extension."
   },
   "extDesc": {
-    "message": "Identify MDPI content and optionally check article and reference DOIs for formal post-publication updates.",
+    "message": "Open-source publisher context and formal post-publication signals for scholarly literature.",
     "description": "A short description of the extension's purpose."
   }
 }
