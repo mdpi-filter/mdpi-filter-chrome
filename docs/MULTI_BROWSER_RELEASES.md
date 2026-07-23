@@ -4,7 +4,7 @@ This repository is the canonical source for the Notandia browser extension. A si
 
 ## Release outputs
 
-A tag such as `v0.1.0` creates one GitHub release containing:
+A tag such as `v0.1.0` is intended to create one GitHub release containing:
 
 - `notandia-chrome-v0.1.0.zip`
 - `notandia-edge-v0.1.0.zip`
@@ -12,17 +12,38 @@ A tag such as `v0.1.0` creates one GitHub release containing:
 - `notandia-safari-source-v0.1.0.zip`
 - `checksums.txt`
 
-The Edge ZIP is directly uploadable. The Chrome ZIP is the checksummed canonical package input: because Verified CRX Uploads are enabled, the protected `store-chrome` workflow signs that ZIP with the registered private key and uploads a generated `.crx`. Firefox and Safari are deliberately labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
+The Edge ZIP is directly uploadable. The Chrome ZIP is the checksummed input used by the protected publication workflow to create a CRX with the registered key. Firefox and Safari are labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
 
-All four packages use the same runtime files. `platforms/<target>/manifest.json` contains only the target-specific manifest overlay. `store/<target>/` contains store-specific metadata. `platforms/<target>/policy.json` defines terminology that must not appear in that target's package or listing.
+All packages use the same runtime files. `platforms/<target>/manifest.json` contains target-specific manifest overlays, `store/<target>/` contains store metadata, and `platforms/<target>/policy.json` contains target-specific terminology restrictions.
+
+## Current testing status
+
+The following has been tested in pull-request CI:
+
+- locked dependency installation;
+- security and regression tests;
+- generation of all four unpacked browser targets;
+- generated manifest and runtime-file verification.
+
+The following has **not** yet been tested end to end:
+
+- creating release assets from an actual version tag;
+- creating the corresponding GitHub release and checksum inventory;
+- downloading those release assets in the protected publication workflow;
+- signing and uploading a Chrome CRX through the Chrome Web Store API;
+- uploading or submitting an Edge package through Partner Center;
+- signing or submitting the first Firefox package through AMO;
+- protected-environment approvals during real store jobs.
+
+Do not describe the tag-release or store-publication workflows as working until those paths have been exercised with the release-candidate and stable-release process.
 
 ## Stable and prerelease versions
 
-GitHub prerelease tags such as `v0.1.0-rc.1` are useful for building and inspecting candidate artifacts. They must not be uploaded to browser stores.
+GitHub prerelease tags such as `v0.1.0-rc.1` are for building and inspecting candidate artifacts. They must not be uploaded to browser stores.
 
-Browser manifests accept numeric versions, so the build converts both `v0.1.0-rc.1` and `v0.1.0` to manifest version `0.1.0`, while preserving the full candidate label only as `version_name` where supported. Uploading the candidate could therefore consume the numeric version needed by the intended stable release.
+Browser manifests accept numeric versions, so both `v0.1.0-rc.1` and `v0.1.0` produce manifest version `0.1.0`, while the full candidate label is retained only as `version_name` where supported. Uploading an RC could therefore consume the numeric version intended for the stable release.
 
-The **Publish Browser Store** workflow enforces this boundary and accepts only stable numeric tags such as `v0.1.0` or `v0.1.0.1`. Use prerelease tags only for GitHub artifact validation, then create a stable tag after the candidate passes testing.
+The **Publish Browser Store** workflow accepts only stable numeric tags such as `v0.1.0`. This validation exists in code but still requires a real workflow test.
 
 ## Local builds
 
@@ -32,7 +53,7 @@ npm test
 npm run build
 ```
 
-The output directories are:
+Generated targets:
 
 ```text
 dist/chrome
@@ -41,7 +62,7 @@ dist/firefox
 dist/safari
 ```
 
-Build one target and optionally override the release version:
+Build one target:
 
 ```bash
 npm run build:target -- --target edge --version 0.1.0
@@ -49,40 +70,19 @@ npm run build:target -- --target edge --version 0.1.0
 
 ## GitHub Environments
 
-Create these repository environments under **Settings → Environments**:
+Configured environments:
 
 - `store-chrome`
 - `store-edge`
 - `store-firefox`
 
-For each environment:
+Each environment should retain required reviewers, deployment restrictions to `main`, and only the secrets needed by that store. The environments being configured does not prove that the publication jobs work; each must be validated during the release process.
 
-1. Enable **Required reviewers** and select the maintainer account.
-2. Prevent administrator bypass if the repository policy allows it.
-3. Restrict deployment to the `main` branch. The publication workflow is manually dispatched from `main`; the immutable release tag is supplied as an input and checked out inside the job.
-4. Add only the secrets required by that store.
+## Chrome Web Store
 
-A release tag builds and verifies packages automatically. Store publication is a separate manual workflow so a compromised tag or build cannot immediately publish everywhere.
+The intended workflow updates the existing Chrome Web Store item and supports Verified CRX Uploads. The Notandia release must remain on the existing item so installed users retain the update path.
 
-Run publication from **Actions → Publish Browser Store → Run workflow**. Select the store, provide an existing stable release tag, review the package and checksum, and then choose whether to submit it for review. Prerelease tags are rejected before any credential is used.
-
-## Chrome Web Store setup
-
-The Chrome workflow updates the existing store item through the Chrome Web Store API v2 and supports the item's Verified CRX Uploads requirement. The Notandia rebrand must be published as an update to that item; do not create a replacement listing or change the registered CRX key.
-
-Complete these account-level steps once:
-
-1. Enable two-step verification on the publishing Google account.
-2. In Google Cloud Console, create or select a project and enable **Chrome Web Store API**.
-3. Configure the OAuth consent screen.
-4. Create a Web application OAuth client and add `https://developers.google.com/oauthplayground` as an authorized redirect URI.
-5. In OAuth Playground, use the OAuth client and authorize the scope `https://www.googleapis.com/auth/chromewebstore`.
-6. Exchange the authorization code and save the refresh token.
-7. In the Chrome Web Store developer dashboard, record the publisher ID and extension ID.
-8. Complete the Store listing and Privacy tabs. The API cannot replace the required first-time dashboard setup.
-9. Keep the exact RSA private key whose public key was registered when Verified CRX Uploads were enabled.
-
-Add these secrets to `store-chrome`:
+Required `store-chrome` secrets:
 
 ```text
 CHROME_PUBLISHER_ID
@@ -93,35 +93,13 @@ CHROME_REFRESH_TOKEN
 CHROME_CRX_PRIVATE_KEY_B64
 ```
 
-Create the base64 value locally without changing the key:
+Never commit or disclose the private key. The workflow is designed to reconstruct it only in the runner, validate that its public key derives `CHROME_EXTENSION_ID`, create a CRX from the verified ZIP, and remove temporary key material. This path still requires a real draft upload test with `submit=false` before it can be considered validated.
 
-```bash
-base64 < privatekey.pem | tr -d '\n'
-```
+## Microsoft Edge Add-ons
 
-Paste only that output into the `CHROME_CRX_PRIVATE_KEY_B64` environment secret. Never commit the PEM file, paste it into an issue, or store it in the Chrome Web Store account. Keep at least one encrypted offline backup independent of GitHub; losing the key requires Chrome Web Store support and can delay updates.
+The intended workflow updates the existing Partner Center product. The Notandia release must remain on that product so installed users receive the update.
 
-The workflow reconstructs the key only in the runner's temporary directory with restrictive permissions, validates it with OpenSSL, derives the Chrome extension ID from its public key, and fails if it does not match `CHROME_EXTENSION_ID`. It then signs the checksummed Chrome ZIP with the installed Google Chrome binary, deletes temporary key material, and uploads the resulting CRX with the required raw-upload headers.
-
-With `submit=false`, the workflow signs and uploads the verified CRX but leaves the item unpublished. With `submit=true`, it also requests review/publication.
-
-For the strongest possible separation, keep the signing key entirely offline and sign/upload CRX files manually instead of storing `CHROME_CRX_PRIVATE_KEY_B64` in GitHub. The protected environment approach provides automation while keeping the key outside the Google publisher account and requiring an explicit deployment approval.
-
-## Microsoft Edge Add-ons setup
-
-The Edge workflow updates the existing Partner Center product through the v1.1 API-key flow. The Notandia rebrand must remain on that product so existing users receive the update.
-
-Complete these account-level steps once:
-
-1. Sign in to Partner Center with the account that owns the extension.
-2. Open **Microsoft Edge → Publish API**.
-3. Enable the new API-key experience.
-4. Select **Create API credentials**.
-5. Record the Client ID and API key when they are shown.
-6. Open the extension overview and record its Product ID GUID.
-7. Keep the existing first store submission and listing metadata in Partner Center. The update API cannot create a new product or edit listing metadata.
-
-Add these secrets to `store-edge`:
+Required `store-edge` secrets:
 
 ```text
 EDGE_PRODUCT_ID
@@ -129,78 +107,50 @@ EDGE_CLIENT_ID
 EDGE_API_KEY
 ```
 
-Optionally add an environment variable named `EDGE_CERTIFICATION_NOTES`. The workflow otherwise uses a conservative default certification note.
+An optional `EDGE_CERTIFICATION_NOTES` environment variable may be used. Test the first canonical package as a draft/upload before submission, inspect Partner Center, and keep `notandia/microsoft-edge` available until certification and upgrade behavior are confirmed.
 
-The Edge package and its listing are checked for references to competing stores and browser-specific installation pages before a release can be created.
+## Firefox Add-ons
 
-## Firefox Add-ons setup
+Firefox has not yet been released. The first submission will use this pre-release Gecko ID:
 
-The Firefox workflow uses Mozilla's official `web-ext` client and the AMO v5 submission API.
+```text
+browser-extension@notandia.github.io
+```
 
-Complete these account-level steps once:
-
-1. Create or sign in to the addons.mozilla.org developer account.
-2. Open the AMO API credentials page.
-3. Generate an API key and secret.
-4. Review `store/firefox/amo-metadata.json`, especially the summary, category, license, and reviewer notes.
-
-Add these secrets to `store-firefox`:
+The Firefox workflow uses Mozilla's `web-ext` client and requires:
 
 ```text
 AMO_JWT_ISSUER
 AMO_JWT_SECRET
 ```
 
-The generated Firefox manifest retains the released Manifest V3 ID:
-
-```text
-mdpi-filter@mdpi-filter.org
-```
-
-This is a legacy compatibility identifier, not the public product name. Do not change it: Notandia must update the same signed add-on identity. Firefox publication is always a real AMO submission, so the workflow requires `submit=true`.
-
-See [Identity compatibility](IDENTITY_COMPATIBILITY.md) before changing any extension or store identifier.
+There is no useful draft-only path in the current workflow: `submit=true` performs a real AMO submission. Before doing that, validate the Firefox package locally, review `store/firefox/amo-metadata.json`, test the optional `websiteContent` consent flow, and confirm the exact ID and listing metadata. After the first signed or listed submission, the Gecko ID becomes a compatibility identity and must remain stable.
 
 ## Safari status
 
-The release workflow creates a Safari-compatible source package and removes metadata that Safari does not need. It does not publish to the App Store yet.
+The workflow only generates Safari-compatible source. Public distribution still requires Apple Developer Program membership, identifiers, Xcode or Safari Web Extension packaging, signing, physical-device testing, App Store metadata, privacy disclosures, and review.
 
-Public Safari distribution still requires:
+## Release-candidate validation sequence
 
-1. Apple Developer Program membership.
-2. An App Store Connect app record.
-3. A verified physical-device test on current macOS and iOS Safari.
-4. Safari Web Extension Packager or Xcode packaging.
-5. App Store privacy disclosures, screenshots, signing, and review information.
-6. App Store Connect API access and narrowly scoped API credentials before publication automation is enabled.
+1. Create a GitHub-only prerelease tag.
+2. Confirm the tag workflow creates exactly four ZIP assets plus `checksums.txt`.
+3. Download and inspect every archive and generated manifest.
+4. Complete `docs/store-release-checklist.md` for Chrome, Edge, Firefox, and Safari source.
+5. Verify upgrade behavior from released Chrome and Edge installations.
+6. Do not send the RC to any store.
+7. Create the stable tag only after the RC evidence passes.
+8. Run Chrome and Edge first with `submit=false` and inspect the resulting drafts/uploads.
+9. Run real submission only after the draft paths and dashboard metadata are confirmed.
+10. Submit Firefox only after its first-release review is complete.
 
-Until those gates are met, use the Safari source package for local compatibility testing and do not advertise it as an installable App Store release.
+## Release safety properties intended by the workflows
 
-## Migrating the dedicated Edge repository
+- one source commit generates all store packages;
+- Actions are pinned to full commit hashes;
+- release assets are generated only after tests pass;
+- store jobs download and checksum existing release assets instead of rebuilding;
+- Chrome signing validates the configured key against the extension ID;
+- store publication rejects prerelease tags before credentials are used;
+- credentials and approvals are isolated by store environment.
 
-Do not archive `notandia/microsoft-edge` before the first Edge update produced from this repository has passed certification.
-
-Migration sequence:
-
-1. Create and inspect a GitHub-only prerelease tag.
-2. Compare the generated Edge ZIP with the existing Edge package without uploading the prerelease to the store.
-3. Create a stable numeric release tag after validation.
-4. Publish one Edge update through the protected workflow.
-5. Confirm installation, updates, permissions, and store listing links.
-6. Replace the dedicated repository README with a migration notice pointing to `notandia/browser-extension`.
-7. Close or supersede any remaining implementation pull requests in the dedicated repository.
-8. Archive the old repository as read-only.
-
-Do not maintain a generated code mirror unless a store reviewer specifically requires it. The store-specific package and metadata are sufficient separation; the runtime source must remain canonical here.
-
-## Release safety properties
-
-- Store packages are built from one source commit.
-- Store-specific terms and manifests are generated, not manually copied.
-- Actions are pinned to full commit hashes.
-- The release workflow publishes only artifacts that passed the test job.
-- Store workflows download the existing release artifacts and verify SHA-256 checksums instead of rebuilding.
-- Chrome publication converts the verified ZIP into a CRX using the registered signing key and validates that the key matches the configured extension ID.
-- Store publication rejects prerelease tags before using provider credentials.
-- Each store has separate credentials and a separate protected GitHub Environment.
-- Store submission remains independently approvable.
+These are implemented controls, not evidence of a successful end-to-end release. Record the first real test results before marking them operational.

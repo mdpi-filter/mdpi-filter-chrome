@@ -49,7 +49,7 @@ test('one source tree generates isolated Notandia browser packages', () => {
     assert.deepEqual(firefox.background.scripts, ['shared/integrity.js', 'background.js']);
     assert.equal(Object.hasOwn(firefox.background, 'service_worker'), false);
     assert.equal(Object.hasOwn(firefox.background, 'type'), false);
-    assert.equal(firefox.browser_specific_settings.gecko.id, 'mdpi-filter@mdpi-filter.org');
+    assert.equal(firefox.browser_specific_settings.gecko.id, 'browser-extension@notandia.github.io');
     assert.deepEqual(firefox.browser_specific_settings.gecko.data_collection_permissions.optional, ['websiteContent']);
     assert.equal(Object.hasOwn(safari, 'externally_connectable'), false);
 
