@@ -1,8 +1,8 @@
 # Privacy policy
 
-Last updated: 22 July 2026
+Last updated: 23 July 2026
 
-MDPI Filter is designed to identify MDPI-related content and, when research-integrity lookups are enabled, check scholarly DOI identifiers for formal post-publication updates.
+MDPI Filter is designed to identify MDPI-related content and can optionally check scholarly DOI identifiers for formal post-publication updates.
 
 ## Data processed locally
 
@@ -16,24 +16,24 @@ This processing occurs inside the browser. Article text, bibliography text, sear
 
 ## Data sent for integrity lookups
 
-When **Check DOI integrity status with Crossref** is enabled, the extension sends normalized DOI identifiers to the Crossref REST API solely to retrieve scholarly metadata and post-publication update relationships, including retractions, expressions of concern, corrections, reinstatements, withdrawals/removals, and related notices.
+Research-integrity lookups are **off by default**. When the user explicitly enables **Check article and reference DOIs**, the extension sends normalized DOI identifiers to the Crossref REST API solely to retrieve scholarly metadata and post-publication update relationships, including retractions, expressions of concern, corrections, reinstatements, withdrawals/removals, and related notices.
 
 Requests:
 
 - omit cookies and other credentials;
 - use a no-referrer policy;
 - do not include the webpage address, article text, citation text, account identifiers, or analytics identifiers;
-- are limited and rate-spaced to respect Crossref's public service.
+- are limited and rate-spaced to no more than four request starts per second.
 
 Crossref operates independently and its own privacy terms apply to requests it receives.
 
 ## Storage
 
-The extension stores user settings in browser synchronization storage. Lookup responses are cached only in the extension service worker's memory and may disappear when the worker stops. The extension does not create an analytics profile or persistent browsing-history database.
+The extension stores user settings in browser synchronization storage. Lookup responses are cached only in the extension background process's memory and may disappear when it stops. The extension does not create an analytics profile or persistent browsing-history database.
 
 ## User control
 
-Integrity lookups can be disabled at any time from the extension popup. Disabling them stops new DOI requests. Existing MDPI detection continues to work, subject to its separate NCBI lookup preference.
+Integrity lookups can be enabled or disabled at any time from the extension popup. Disabling them cancels active requests and prevents new DOI requests. Existing MDPI detection continues to work, subject to its separate NCBI lookup preference.
 
 ## Coverage and limitations
 
