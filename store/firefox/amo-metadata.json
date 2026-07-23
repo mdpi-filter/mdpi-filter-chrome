@@ -1,6 +1,6 @@
 {
   "summary": {
-    "en-US": "Identify MDPI publications in searches, references, cited-by lists, and similar-article sections."
+    "en-US": "Identify MDPI publications and optionally check article and reference DOIs for formal post-publication updates."
   },
   "categories": [
     "other"
@@ -10,6 +10,6 @@
   },
   "version": {
     "license": "AGPL-3.0-only",
-    "approval_notes": "The submitted package is generated from the public repository without minification, bundling, remote code, or runtime npm dependencies."
+    "approval_notes": "The submitted package is generated from the public repository without minification, bundling, remote code, or runtime npm dependencies. Research-integrity lookups are off by default. If the user explicitly enables them and grants Firefox's optional websiteContent data permission, only normalized DOI identifiers are sent to the Crossref REST API. Page URLs, page or citation text, cookies, account identifiers, and referrers are not sent. Requests are limited to no more than four starts per second and active requests are cancelled when lookups are disabled or navigation begins. Privacy policy: https://mdpi-filter.pages.dev/privacy/firefox/"
   }
 }
