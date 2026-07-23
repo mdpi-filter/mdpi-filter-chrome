@@ -1,8 +1,8 @@
 {
-  "name": "mdpi-filter-browser-extension",
+  "name": "notandia-browser-extension",
   "version": "0.1.0",
   "private": true,
-  "description": "Cross-browser extension for MDPI detection and explainable research-integrity signals.",
+  "description": "Cross-browser extension for publisher context and explainable research-integrity signals.",
   "scripts": {
     "build": "node scripts/build-all.js",
     "build:target": "node scripts/build-target.js",
