@@ -1,6 +1,6 @@
 {
   "summary": {
-    "en-US": "Identify MDPI publications and optionally check article and reference DOIs for formal post-publication updates."
+    "en-US": "Open-source publisher context and formal post-publication signals for scholarly literature."
   },
   "categories": [
     "other"
@@ -10,6 +10,6 @@
   },
   "version": {
     "license": "AGPL-3.0-only",
-    "approval_notes": "The submitted package is generated from the public repository without minification, bundling, remote code, or runtime npm dependencies. Research-integrity lookups are off by default. If the user explicitly enables them and grants Firefox's optional websiteContent data permission, only normalized DOI identifiers are sent to the Crossref REST API. Page URLs, page or citation text, cookies, account identifiers, and referrers are not sent. Requests are limited to no more than four starts per second and active requests are cancelled when lookups are disabled or navigation begins. Privacy policy: https://mdpi-filter.pages.dev/privacy/firefox/"
+    "approval_notes": "Notandia was previously distributed as MDPI Filter. The legacy Gecko add-on ID is intentionally preserved so existing installations continue to receive updates. The submitted package is generated from the public repository without minification, bundling, remote code, or runtime npm dependencies. Research-integrity lookups are off by default. If the user explicitly enables them and grants Firefox's optional websiteContent data permission, only normalized DOI identifiers are sent to the Crossref REST API. Page URLs, page or citation text, cookies, account identifiers, and referrers are not sent. Requests are limited to no more than four starts per second and active requests are cancelled when lookups are disabled or navigation begins. Privacy policy: https://mdpi-filter.pages.dev/privacy/firefox/"
   }
 }
