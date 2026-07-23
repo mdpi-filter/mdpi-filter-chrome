@@ -92,6 +92,52 @@ jobs:
           test -f "$PACKAGE"
           echo "path=$PACKAGE" >> "$GITHUB_OUTPUT"
 
+      - name: Sign Chrome package as verified CRX
+        if: inputs.store == 'chrome'
+        id: chrome_crx
+        shell: bash
+        env:
+          SOURCE_ZIP: ${{ steps.package.outputs.path }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CRX_PRIVATE_KEY_B64: ${{ secrets.CHROME_CRX_PRIVATE_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CHROME_CRX_PRIVATE_KEY_B64" ]]; then
+            echo "Missing CHROME_CRX_PRIVATE_KEY_B64 in the store-chrome environment." >&2
+            exit 1
+          fi
+
+          umask 077
+          WORK_DIR="$RUNNER_TEMP/mdpi-filter-chrome-extension"
+          KEY_PATH="$RUNNER_TEMP/mdpi-filter-chrome-private-key.pem"
+          OUTPUT_PATH="release-assets/$(basename "${SOURCE_ZIP%.zip}").crx"
+          cleanup() {
+            rm -rf "$WORK_DIR" "$KEY_PATH" "$WORK_DIR.crx"
+          }
+          trap cleanup EXIT
+
+          rm -rf "$WORK_DIR" "$KEY_PATH" "$WORK_DIR.crx" "$OUTPUT_PATH"
+          mkdir -p "$WORK_DIR"
+          printf '%s' "$CHROME_CRX_PRIVATE_KEY_B64" | base64 --decode > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          openssl pkey -in "$KEY_PATH" -check -noout
+
+          DERIVED_EXTENSION_ID="$(
+            openssl pkey -in "$KEY_PATH" -pubout -outform DER \
+              | node -e "const crypto=require('node:crypto');const chunks=[];process.stdin.on('data',d=>chunks.push(d));process.stdin.on('end',()=>{const hex=crypto.createHash('sha256').update(Buffer.concat(chunks)).digest('hex').slice(0,32);process.stdout.write([...hex].map(c=>String.fromCharCode(97+parseInt(c,16))).join(''));});"
+          )"
+          if [[ "$DERIVED_EXTENSION_ID" != "$CHROME_EXTENSION_ID" ]]; then
+            echo "The CRX signing key does not match CHROME_EXTENSION_ID." >&2
+            exit 1
+          fi
+
+          unzip -q "$SOURCE_ZIP" -d "$WORK_DIR"
+          command -v google-chrome >/dev/null
+          google-chrome --pack-extension="$WORK_DIR" --pack-extension-key="$KEY_PATH"
+          test -s "$WORK_DIR.crx"
+          mv "$WORK_DIR.crx" "$OUTPUT_PATH"
+          echo "path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+
       - name: Upload or publish Chrome package
         if: inputs.store == 'chrome'
         env:
@@ -101,7 +147,7 @@ jobs:
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
           SUBMIT: ${{ inputs.submit }}
-        run: node scripts/publish-chrome.js "${{ steps.package.outputs.path }}"
+        run: node scripts/publish-chrome.js "${{ steps.chrome_crx.outputs.path }}"
 
       - name: Upload or publish Edge package
         if: inputs.store == 'edge'
