@@ -12,7 +12,7 @@ A tag such as `v0.1.0` creates one GitHub release containing:
 - `mdpi-filter-safari-source-v0.1.0.zip`
 - `checksums.txt`
 
-Chrome and Edge receive directly uploadable ZIP packages. Firefox and Safari are deliberately labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
+The Edge ZIP is directly uploadable. The Chrome ZIP is the checksummed canonical package input: because Verified CRX Uploads are enabled, the protected `store-chrome` workflow signs that ZIP with the registered private key and uploads a generated `.crx`. Firefox and Safari are deliberately labelled `source`: Firefox must be signed by Mozilla, and Safari must be packaged and signed through Apple before ordinary installation.
 
 All four packages use the same runtime files. `platforms/<target>/manifest.json` contains only the target-specific manifest overlay. `store/<target>/` contains store-specific metadata. `platforms/<target>/policy.json` defines terminology that must not appear in that target's package or listing.
 
@@ -59,7 +59,7 @@ For each environment:
 
 1. Enable **Required reviewers** and select the maintainer account.
 2. Prevent administrator bypass if the repository policy allows it.
-3. Restrict deployment branches and tags to protected release tags.
+3. Restrict deployment to the `main` branch. The publication workflow is manually dispatched from `main`; the immutable release tag is supplied as an input and checked out inside the job.
 4. Add only the secrets required by that store.
 
 A release tag builds and verifies packages automatically. Store publication is a separate manual workflow so a compromised tag or build cannot immediately publish everywhere.
@@ -68,7 +68,7 @@ Run publication from **Actions → Publish Browser Store → Run workflow**. Sel
 
 ## Chrome Web Store setup
 
-The Chrome workflow updates an existing store item through the Chrome Web Store API v2.
+The Chrome workflow updates an existing store item through the Chrome Web Store API v2 and supports the item's Verified CRX Uploads requirement.
 
 Complete these account-level steps once:
 
@@ -80,6 +80,7 @@ Complete these account-level steps once:
 6. Exchange the authorization code and save the refresh token.
 7. In the Chrome Web Store developer dashboard, record the publisher ID and extension ID.
 8. Complete the Store listing and Privacy tabs. The API cannot replace the required first-time dashboard setup.
+9. Keep the exact RSA private key whose public key was registered when Verified CRX Uploads were enabled.
 
 Add these secrets to `store-chrome`:
 
@@ -89,9 +90,22 @@ CHROME_EXTENSION_ID
 CHROME_CLIENT_ID
 CHROME_CLIENT_SECRET
 CHROME_REFRESH_TOKEN
+CHROME_CRX_PRIVATE_KEY_B64
 ```
 
-With `submit=false`, the workflow uploads the verified ZIP but leaves the item unpublished. With `submit=true`, it also requests review/publication.
+Create the base64 value locally without changing the key:
+
+```bash
+base64 < privatekey.pem | tr -d '\n'
+```
+
+Paste only that output into the `CHROME_CRX_PRIVATE_KEY_B64` environment secret. Never commit the PEM file, paste it into an issue, or store it in the Chrome Web Store account. Keep at least one encrypted offline backup independent of GitHub; losing the key requires Chrome Web Store support and can delay updates.
+
+The workflow reconstructs the key only in the runner's temporary directory with restrictive permissions, validates it with OpenSSL, derives the Chrome extension ID from its public key, and fails if it does not match `CHROME_EXTENSION_ID`. It then signs the checksummed Chrome ZIP with the installed Google Chrome binary, deletes temporary key material, and uploads the resulting CRX with the required raw-upload headers.
+
+With `submit=false`, the workflow signs and uploads the verified CRX but leaves the item unpublished. With `submit=true`, it also requests review/publication.
+
+For the strongest possible separation, keep the signing key entirely offline and sign/upload CRX files manually instead of storing `CHROME_CRX_PRIVATE_KEY_B64` in GitHub. The protected environment approach provides automation while keeping the key outside the Google publisher account and requiring an explicit deployment approval.
 
 ## Microsoft Edge Add-ons setup
 
@@ -184,6 +198,7 @@ Do not maintain a generated code mirror unless a store reviewer specifically req
 - Actions are pinned to full commit hashes.
 - The release workflow publishes only artifacts that passed the test job.
 - Store workflows download the existing release artifacts and verify SHA-256 checksums instead of rebuilding.
+- Chrome publication converts the verified ZIP into a CRX using the registered signing key and validates that the key matches the configured extension ID.
 - Store publication rejects prerelease tags before using provider credentials.
 - Each store has separate credentials and a separate protected GitHub Environment.
 - Store submission remains independently approvable.
