@@ -1,72 +1,71 @@
-# Privacy Policy for MDPI Filter Chrome Extension
+# Privacy Policy for the Notandia Browser Extension
 
-**Last Updated:** July 21, 2026
+**Last updated:** July 23, 2026
 
-MDPI Filter (the “Extension”) identifies MDPI publications in search results, bibliographies, inline citations, cited-by lists, and similar-article lists. Most processing occurs locally in the browser.
+Notandia, previously distributed as MDPI Filter, adds publisher context and optional formal post-publication signals while users read scholarly literature. Most processing occurs locally in the browser.
 
-## 1. Information the Extension Handles
+## 1. Information handled locally
 
-### User preferences
+The extension may inspect HTTPS pages to identify:
 
-The Extension stores settings such as highlight or hide mode, potential-site highlighting, highlight color, diagnostic logging preference, and whether NCBI lookups are enabled. These settings are stored with `chrome.storage.sync`; Google may synchronize them between browsers when Chrome Sync is enabled.
+- DOI, PMID, and PMCID identifiers;
+- MDPI-related domains, publisher metadata, links, and references;
+- bibliography structure and short citation text needed to present references locally;
+- formal status information returned for user-authorized DOI lookups.
 
-### Website content
+The extension does not send complete page content, citation text, search queries, browsing history, or full page addresses to the developer or an analytics service.
 
-To identify publications, content scripts inspect text, links, citation identifiers, and the document structure of HTTPS pages you visit. This requires access to HTTPS websites because scholarly articles and references can appear on many different domains.
+User preferences are stored through browser extension storage. Browser synchronization may copy those settings between signed-in browsers when the user has enabled the browser's synchronization service.
 
-Page content is processed locally. The Extension does not send complete page content, browsing history, or reference text to its developer or to an analytics service.
+## 2. External communications
 
-### Publication identifiers
+### NCBI ID Converter
 
-The Extension may extract Digital Object Identifiers (DOIs), PubMed IDs (PMIDs), and PubMed Central IDs (PMCIDs). Detection results are cached temporarily in memory to avoid repeated work. These caches are bounded, are not used for tracking, and are cleared when the relevant extension or page context ends.
+When NCBI lookups are enabled, the extension sends only validated DOI, PMID, or PMCID values to the NCBI ID Converter. Requests identify the application as `notandia` and omit browser cookies, other credentials, referrer information, and a developer email address.
 
-## 2. External Communications
+NCBI lookups are bounded, deduplicated, batched, and time-limited. They can be disabled in advanced settings; disabling them may reduce MDPI-detection coverage.
 
-### NCBI ID Converter API
+### Optional Crossref integrity lookups
 
-When NCBI lookups are enabled, the Extension sends only validated DOI, PMID, or PMCID values to the NCBI ID Converter endpoint at `https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/`. Requests identify the application as `mdpi-filter`; they do not include a developer email address, browser cookies, or other browser credentials.
+Research-integrity lookups are off by default. When the user explicitly enables **Check article and reference DOIs**, the extension sends normalized DOI identifiers to the Crossref REST API to retrieve scholarly metadata and formal update relationships such as retractions, expressions of concern, corrections, reinstatements, withdrawals, removals, and duplicate-publication findings.
 
-Requests use HTTPS and a no-referrer policy. NCBI receives the identifiers and the IP address required for normal network communication. Lookups are deduplicated, batched, rate-bounded per page, and stored only in bounded in-memory caches. NCBI lookups are enabled by default and can be disabled in the Extension’s advanced settings; disabling them may reduce detection accuracy.
+Crossref requests:
 
-Relevant NCBI and NLM policies:
+- include only normalized DOI identifiers and normal network metadata such as the user's IP address;
+- omit page addresses, page and citation text, browser cookies, credentials, account identifiers, analytics identifiers, and referrers;
+- are limited to no more than 50 unique DOI requests per page scan and four request starts per second;
+- are cancelled when the feature is disabled, the scan is replaced, or navigation begins.
 
-- [NCBI policies](https://www.ncbi.nlm.nih.gov/home/about/policies/)
-- [NLM privacy policy](https://www.nlm.nih.gov/privacy.html)
+Firefox additionally requires the user to grant its optional `websiteContent` data-collection permission before these DOI requests can begin.
 
-### User-initiated GitHub issue reports
+### User-initiated GitHub reports
 
-Selecting **Report Filter Issue** opens a public GitHub issue form. The Extension pre-fills the page origin and path, but deliberately removes query parameters and fragments because those may contain search terms, document identifiers, session values, or access tokens. Browser, extension-version, and current filter-mode information is also pre-filled.
+Selecting the report control opens a public GitHub issue form. The extension pre-fills the page origin and path but removes query parameters and fragments. Nothing is submitted automatically; the user can edit or discard the report.
 
-Nothing is submitted automatically. You can review, edit, or discard the report before posting it. Information you submit is handled under GitHub’s privacy terms and may become public.
+## 3. Storage and retention
 
-### No analytics or commercial sharing
+- Preferences remain in browser extension storage until changed, cleared, or the extension is removed.
+- Detection and lookup results are held in bounded memory caches and are not used for tracking.
+- Crossref lookup responses may remain in memory for up to 24 hours and disappear sooner when the background process stops.
+- Per-tab reference data is cleared when navigation begins or the tab closes.
+- The extension does not maintain a persistent browsing-history database or analytics profile.
 
-The Extension contains no advertising or analytics service. We do not sell or rent user data, and we do not share page content, browsing history, or preferences for advertising, profiling, or data-broker purposes.
+## 4. Security and data-use boundaries
 
-## 3. Security Measures
+- The extension executes no remote code and ships no runtime npm dependencies.
+- Page-derived content is rendered as text rather than injected as HTML.
+- Messages and identifiers crossing extension contexts are validated and bounded.
+- Network requests use HTTPS, omit credentials, and use a no-referrer policy.
+- The project contains no advertising or product analytics and does not sell or rent user data.
 
-- Manifest V3 and a self-only extension Content Security Policy are used.
-- Remote executable code is not loaded.
-- Page-derived reference text is handled as plain text and rendered with `textContent`, not as HTML.
-- Messages and page-derived identifiers crossing extension contexts are validated and bounded.
-- NCBI requests are validated, deduplicated, batched, time-limited, and made without browser credentials or a referrer.
-- Runtime npm dependencies are not shipped.
-- Release artifacts and GitHub Actions are verified during continuous integration.
+## 5. User choices
 
-No software can be guaranteed completely secure. Security reports should be submitted privately through the repository’s GitHub Security Advisory form.
+Users can disable NCBI lookups, leave Crossref integrity lookups disabled, revoke Firefox's optional permission, change filtering preferences, clear synchronized extension data, disable the extension on selected sites, or uninstall it.
 
-## 4. Data Retention
+A message that no known signal was found means only that none was found in the checked records. It is not a claim that a work, journal, or publisher is reliable.
 
-- Preferences remain in `chrome.storage.sync` until changed, cleared, or the Extension is removed.
-- Publication identifiers, reference previews, and detection results are held temporarily in bounded memory caches.
-- Per-tab reference data is cleared when navigation begins or the tab is closed.
-- The Extension does not maintain a persistent browsing-history database.
-- The developer does not receive Extension telemetry.
+## 6. Independence and contact
 
-## 5. User Choices
+Notandia is an independent open-source project. It is not affiliated with, authorized by, or endorsed by MDPI AG, Crossref, Retraction Watch, NCBI, browser vendors, or any publisher or data provider.
 
-You can disable NCBI lookups, change filtering preferences, clear synchronized Extension data, disable the Extension for selected sites using Chrome controls, or uninstall it at any time.
-
-## 6. Changes and Contact
-
-Material changes will be reflected here by updating the date above. Questions and non-sensitive reports may be submitted through the repository’s public issue tracker. Security vulnerabilities should be reported through the private security-advisory channel described in `SECURITY.md`.
+Questions and non-sensitive reports may be submitted through the public issue tracker at `notandia/browser-extension`. Security vulnerabilities should be reported privately as described in `SECURITY.md`.
