@@ -1,17 +1,17 @@
-# MDPI Filter browser extension
+# Notandia browser extension
 
-**MDPI Filter** identifies MDPI publications in literature searches and scholarly references and can provide opt-in, explainable post-publication integrity signals. This repository is the canonical browser-extension source for Chrome, Microsoft Edge, Firefox, and Safari.
+**Notandia** is an independent, open-source browser extension that adds publisher context and explainable post-publication signals while preserving the existing MDPI-detection features previously distributed as **MDPI Filter**. This repository is the canonical browser-extension source for Chrome, Microsoft Edge, Firefox, and Safari.
 
-> **Independent project:** MDPI Filter is not affiliated with, authorized by, or endorsed by MDPI AG. MDPI is a registered brand of MDPI AG.
+> **Independent project:** Notandia is not affiliated with, authorized by, or endorsed by MDPI AG, Crossref, Retraction Watch, NCBI, browser vendors, or any publisher or data provider. MDPI is a registered brand of MDPI AG.
 
 ## Browser outputs
 
 | Target | Generated release asset | Distribution status |
 |---|---|---|
-| Chrome | `mdpi-filter-chrome-vX.Y.Z.zip` | Uploadable to Chrome Web Store |
-| Microsoft Edge | `mdpi-filter-edge-vX.Y.Z.zip` | Uploadable to Microsoft Edge Add-ons |
-| Firefox | `mdpi-filter-firefox-source-vX.Y.Z.zip` | Submitted to AMO for Mozilla signing |
-| Safari | `mdpi-filter-safari-source-vX.Y.Z.zip` | Local compatibility source; App Store publication deferred |
+| Chrome | `notandia-chrome-vX.Y.Z.zip` | Uploadable to the existing Chrome Web Store item |
+| Microsoft Edge | `notandia-edge-vX.Y.Z.zip` | Uploadable to the existing Microsoft Edge Add-ons product |
+| Firefox | `notandia-firefox-source-vX.Y.Z.zip` | Submitted to AMO for Mozilla signing |
+| Safari | `notandia-safari-source-vX.Y.Z.zip` | Local compatibility source; App Store publication deferred |
 
 All packages are generated from the same source commit. Browser-specific manifests, store metadata, terminology restrictions, and credentials remain isolated.
 
@@ -26,6 +26,18 @@ All packages are generated from the same source commit. Browser-specific manifes
 - Optionally check the current article and DOI-bearing references for formal Crossref/Retraction Watch update relationships.
 - Show evidence type, chronology, provenance, coverage, deferred checks, and unresolved checks instead of producing an opaque quality score.
 - Keep research-integrity lookups off by default and allow NCBI and integrity network features to be disabled independently.
+
+## Identity and update compatibility
+
+Notandia is a public-facing rebrand of released software, not a replacement extension. Existing store items and technical identities are retained so installed copies continue to receive updates.
+
+- Chrome keeps its existing extension ID and registered CRX signing key.
+- Microsoft Edge keeps its existing Product ID and extension identity.
+- Firefox keeps the released Gecko ID `mdpi-filter@mdpi-filter.org`.
+- Existing storage keys and MDPI-specific runtime identifiers remain where changing them could reset settings or break compatibility.
+- New release files, store-facing metadata, UI labels, documentation, and public project links use Notandia.
+
+These legacy identifiers are compatibility mechanisms, not current product branding. See [Identity compatibility](docs/IDENTITY_COMPATIBILITY.md).
 
 ## Development
 

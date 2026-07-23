@@ -87,10 +87,10 @@ jobs:
         run: |
           case "$TARGET" in
             chrome|edge)
-              FILENAME="mdpi-filter-${TARGET}-v${VERSION}.zip"
+              FILENAME="notandia-${TARGET}-v${VERSION}.zip"
               ;;
             firefox|safari)
-              FILENAME="mdpi-filter-${TARGET}-source-v${VERSION}.zip"
+              FILENAME="notandia-${TARGET}-source-v${VERSION}.zip"
               ;;
             *)
               echo "Unsupported target: $TARGET" >&2

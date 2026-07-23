@@ -1,42 +1,44 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-This document covers all maintained releases of the MDPI Filter Chrome extension.  
-Security fixes are applied to every version that is still published in the Chrome Web Store.
+This document covers maintained Notandia browser-extension releases, including versions previously distributed as MDPI Filter. Security fixes are applied to supported versions still distributed through browser stores.
 
-| Version    | Supported        |
-| ---------- | ---------------- |
-| ≥ 0.0.1    | :white_check_mark: |
-| < 0.0.1    | :x:               |
+| Version | Supported |
+|---|---|
+| ≥ 0.0.1 | :white_check_mark: |
+| < 0.0.1 | :x: |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-To report a security issue, please use our private **security** tracker:  
-https://github.com/mdpi-filter/mdpi-filter-chrome/security/advisories/new
+Report security issues privately through the repository's security-advisory form:
 
-Include in your report:
- - A clear description of the vulnerability
- - Steps to reproduce
- - Impact assessment (e.g., data exposure, code injection)
- - Proof-of-concept code or screenshots (if available)
+https://github.com/notandia/browser-extension/security/advisories/new
 
-## Response and Coordination
+Include:
+
+- a clear description of the vulnerability;
+- steps to reproduce;
+- the expected security impact;
+- proof-of-concept code or screenshots when available.
+
+Do not submit secrets, personal data, private document contents, or active exploit details through a public issue.
+
+## Response and coordination
 
 - We will acknowledge receipt within **9 business days**.
 - A public fix or mitigation will be released within **30 days** of disclosure, or we will provide a status update.
-- If the issue cannot be fully resolved within that timeframe due to limited resources, the maintainer will work with you to agree on a suitable mitigation or revised timeline.
-- You may publicly disclose details once a fixed version or agreed mitigation is published, or **90 days** after our acknowledgment, whichever comes first.
+- If the issue cannot be fully resolved within that timeframe due to limited resources, the maintainer will work with the reporter to agree on a suitable mitigation or revised timeline.
+- Details may be publicly disclosed once a fixed version or agreed mitigation is published, or **90 days** after acknowledgment, whichever comes first.
 
-## Security Fix Process
+## Security-fix process
 
-1. Assessment & triage  
-2. Patch development & review  
-3. Release to Chrome Web Store  
-4. Public advisory & credit  
+1. Assessment and triage.
+2. Patch development and review.
+3. Verified cross-browser build.
+4. Release through the affected browser stores.
+5. Public advisory and credit where appropriate.
 
-## Security Credits
+## Security credits
 
-Contributors who report valid vulnerabilities will be credited in the release notes, unless anonymity is requested.
-
----
+Contributors who report valid vulnerabilities will be credited in the release notes unless anonymity is requested.

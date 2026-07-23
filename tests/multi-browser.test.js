@@ -13,7 +13,7 @@ function readManifest(target) {
   return JSON.parse(fs.readFileSync(path.join(DIST, target, 'manifest.json'), 'utf8'));
 }
 
-test('one source tree generates isolated browser packages', () => {
+test('one source tree generates isolated Notandia browser packages', () => {
   fs.rmSync(DIST, { recursive: true, force: true });
   try {
     const result = spawnSync(process.execPath, [
@@ -24,6 +24,11 @@ test('one source tree generates isolated browser packages', () => {
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
 
+    const locale = JSON.parse(
+      fs.readFileSync(path.join(ROOT, '_locales', 'en', 'messages.json'), 'utf8')
+    );
+    assert.equal(locale.extName.message, 'Notandia');
+
     const chrome = readManifest('chrome');
     const edge = readManifest('edge');
     const firefox = readManifest('firefox');
@@ -32,6 +37,8 @@ test('one source tree generates isolated browser packages', () => {
     for (const manifest of [chrome, edge, firefox, safari]) {
       assert.equal(manifest.version, '1.2.3');
       assert.equal(manifest.version_name, '1.2.3-beta.1');
+      assert.equal(manifest.name, '__MSG_extName__');
+      assert.equal(manifest.action.default_title, 'Notandia');
       assert.equal(manifest.homepage_url, 'https://mdpi-filter.pages.dev/');
       assert.deepEqual(manifest.permissions, ['storage']);
       assert.ok(manifest.content_scripts[0].js.includes('content/integrity_scanner.js'));

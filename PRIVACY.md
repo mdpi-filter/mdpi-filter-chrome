@@ -2,7 +2,7 @@
 
 Last updated: 23 July 2026
 
-MDPI Filter is designed to identify MDPI-related content and can optionally check scholarly DOI identifiers for formal post-publication updates.
+Notandia, previously distributed as MDPI Filter, identifies publisher-related content and can optionally check scholarly DOI identifiers for formal post-publication updates.
 
 ## Data processed locally
 
@@ -48,6 +48,10 @@ Diagnostic logging is disabled by default. When enabled by the user, logs remain
 Issue reports are submitted only when the user chooses to open GitHub. The prefilled report omits query strings and URL fragments, but users should remove any information they do not want to publish before submitting.
 
 Security reports should follow `SECURITY.md`. Privacy questions and correction requests may be opened in the repository issue tracker without including sensitive personal information.
+
+## Independence
+
+Notandia is an independent open-source project. It is not affiliated with, authorized by, or endorsed by MDPI AG, Crossref, Retraction Watch, NCBI, browser vendors, or any publisher or data provider.
 
 ## Changes
 

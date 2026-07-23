@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const manifest = chrome.runtime.getManifest();
         const title = encodeURIComponent(`Detection issue on ${parsed.hostname}`);
         const body = encodeURIComponent(`**Report a detection issue**\n\nBefore submitting, remove information you do not want public.\n\n**Webpage address (query and fragment omitted):**\n${address}\n\n**Problem:**\n[Missed, incorrect, or wrong integrity status]\n\n---\n- Extension: ${manifest.name}\n- Version: ${manifest.version}\n- Integrity lookups: ${el.integrity.checked ? 'enabled' : 'disabled'}\n- Browser: ${navigator.userAgent}`);
-        chrome.tabs.create({ url: `https://github.com/mdpi-filter/mdpi-filter-chrome/issues/new?title=${title}&body=${body}` });
+        chrome.tabs.create({ url: `https://github.com/notandia/browser-extension/issues/new?title=${title}&body=${body}` });
       } catch {
         setStatus('Issue reports are available only for web pages.');
       }
