@@ -1,6 +1,8 @@
 # MDPI Filter browser extension
 
-**MDPI Filter** identifies MDPI publications in literature searches and scholarly references. This repository is the canonical browser-extension source for Chrome, Microsoft Edge, Firefox, and Safari.
+**MDPI Filter** identifies MDPI publications in literature searches and scholarly references and can provide opt-in, explainable post-publication integrity signals. This repository is the canonical browser-extension source for Chrome, Microsoft Edge, Firefox, and Safari.
+
+> **Independent project:** MDPI Filter is not affiliated with, authorized by, or endorsed by MDPI AG. MDPI is a registered brand of MDPI AG.
 
 ## Browser outputs
 
@@ -21,7 +23,9 @@ All packages are generated from the same source commit. Browser-specific manifes
 - Identify MDPI entries in cited-by and similar-article sections.
 - Show detected references in the toolbar popup and scroll to a selected reference.
 - Resolve PMID and PMCID identifiers through NCBI when direct DOI evidence is unavailable.
-- Disable all optional network detection through the extension preference.
+- Optionally check the current article and DOI-bearing references for formal Crossref/Retraction Watch update relationships.
+- Show evidence type, chronology, provenance, coverage, deferred checks, and unresolved checks instead of producing an opaque quality score.
+- Keep research-integrity lookups off by default and allow NCBI and integrity network features to be disabled independently.
 
 ## Development
 
@@ -102,20 +106,26 @@ Build the Safari target and use Safari's temporary web-extension development flo
 
 The extension:
 
-- Uses Manifest V3.
-- Requests only `storage` as an extension permission.
+- Uses Manifest V3 or the browser's compatible Web Extension form.
+- Requests only `storage` as a standard extension permission.
 - Executes no remote code.
 - Includes no runtime npm dependencies.
-- Sends only bounded scholarly identifiers to documented APIs when network detection is enabled.
-- Omits credentials and referrer information from NCBI requests.
-- Supports a zero-network mode.
+- Keeps Crossref integrity lookups off until the user explicitly enables them.
+- Sends only bounded scholarly identifiers to documented APIs.
+- Limits an integrity scan to 50 unique DOI requests and no more than four request starts per second.
+- Cancels active and queued integrity requests when disabled, replaced by a newer scan, or navigation begins.
+- Omits browser credentials and referrer information from NCBI and Crossref requests.
+- Does not send complete page text, citation text, full URLs, search queries, browsing history, account identifiers, or analytics identifiers to the integrity provider.
+- Supports a zero-network configuration.
 - Uses pinned GitHub Actions and deterministic release inputs.
 
-See [SECURITY.md](SECURITY.md) and the project website for current disclosures.
+See [SECURITY.md](SECURITY.md), [PRIVACY.md](PRIVACY.md), and the project website for current disclosures.
 
 ## Known limitations
 
 Some publisher pages use nonstandard, dynamically loaded, collapsed, or author-year citation structures. Reference-list detection can work even when inline-citation marking or scroll-to-reference cannot be performed safely. False-positive avoidance takes priority over guessing from weak journal-title evidence.
+
+Integrity coverage depends on DOI availability and the formal relationships present in the checked Crossref records. A result saying no known signal was found is not a guarantee that a work is correct or reliable. Deferred, failed, and unresolved checks are not treated as clear.
 
 Representative regression pages include PubMed Central, Europe PMC, Nature, Cell, BMJ, ScienceDirect, Wiley, Sage, Taylor & Francis, Oxford Academic, LWW, and Wikipedia pages. Regressions should be filed with the page URL, browser/version, extension version, expected result, and actual result.
 
