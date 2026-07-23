@@ -31,6 +31,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (timeout) setTimeout(() => { el.status.textContent = ''; }, timeout);
   }
 
+  function usesFirefoxDataConsent() {
+    const optional = chrome.runtime.getManifest().browser_specific_settings?.gecko?.data_collection_permissions?.optional;
+    return Array.isArray(optional) && optional.includes('websiteContent') && Boolean(globalThis.browser?.permissions);
+  }
+
+  async function hasFirefoxDataConsent() {
+    if (!usesFirefoxDataConsent()) return true;
+    const permissions = await browser.permissions.getAll();
+    return Array.isArray(permissions.data_collection) && permissions.data_collection.includes('websiteContent');
+  }
+
+  async function requestFirefoxDataConsent() {
+    if (!usesFirefoxDataConsent()) return true;
+    return browser.permissions.request({ data_collection: ['websiteContent'] });
+  }
+
+  async function removeFirefoxDataConsent() {
+    if (!usesFirefoxDataConsent()) return true;
+    return browser.permissions.remove({ data_collection: ['websiteContent'] });
+  }
+
   function setCounts(counts = {}) {
     for (const [status, id] of Object.entries(countIds)) {
       const value = Number(counts[status]) || 0;
@@ -81,9 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
     el.color.value = settings.potentialMdpiHighlightColor || '#FFFF99';
     el.logging.checked = Boolean(settings.loggingEnabled);
     el.ncbi.checked = settings.ncbiApiEnabled !== false;
-    el.integrity.checked = settings.integrityLookupsEnabled === true;
-    if (el.integrity.checked) loadIntegrity();
-    else renderDisabled();
+    void (async () => {
+      const permitted = await hasFirefoxDataConsent().catch(() => false);
+      el.integrity.checked = settings.integrityLookupsEnabled === true && permitted;
+      if (settings.integrityLookupsEnabled === true && !permitted) {
+        chrome.storage.sync.set({ integrityLookupsEnabled: false });
+      }
+      if (el.integrity.checked) loadIntegrity();
+      else renderDisabled();
+    })();
   });
 
   function requestRescan() {
@@ -97,20 +124,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   el.save.addEventListener('click', () => {
-    if (!el.ncbi.checked && !confirm('Disabling NCBI lookups reduces MDPI detection accuracy. Continue?')) return;
-    chrome.storage.sync.set({
-      mode: radios.find(radio => radio.checked)?.value || 'highlight',
-      highlightPotentialMdpiSites: el.potential.checked,
-      potentialMdpiHighlightColor: el.color.value || '#FFFF99',
-      loggingEnabled: el.logging.checked,
-      ncbiApiEnabled: el.ncbi.checked,
-      integrityLookupsEnabled: el.integrity.checked
-    }, () => {
-      if (chrome.runtime.lastError) return setStatus('Error saving settings.');
-      setStatus('Settings saved.');
-      if (el.integrity.checked) requestRescan();
-      else renderDisabled();
-    });
+    void (async () => {
+      if (!el.ncbi.checked && !confirm('Disabling NCBI lookups reduces MDPI detection accuracy. Continue?')) return;
+      if (el.integrity.checked) {
+        const granted = await requestFirefoxDataConsent().catch(() => false);
+        if (!granted) {
+          el.integrity.checked = false;
+          renderDisabled();
+          setStatus('Firefox data permission was not granted.');
+          return;
+        }
+      } else {
+        await removeFirefoxDataConsent().catch(() => false);
+      }
+
+      chrome.storage.sync.set({
+        mode: radios.find(radio => radio.checked)?.value || 'highlight',
+        highlightPotentialMdpiSites: el.potential.checked,
+        potentialMdpiHighlightColor: el.color.value || '#FFFF99',
+        loggingEnabled: el.logging.checked,
+        ncbiApiEnabled: el.ncbi.checked,
+        integrityLookupsEnabled: el.integrity.checked
+      }, () => {
+        if (chrome.runtime.lastError) return setStatus('Error saving settings.');
+        setStatus('Settings saved.');
+        if (el.integrity.checked) requestRescan();
+        else renderDisabled();
+      });
+    })();
   });
 
   el.rescan.addEventListener('click', () => {
