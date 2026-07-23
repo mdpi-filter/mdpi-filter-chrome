@@ -79,10 +79,10 @@ jobs:
           VERSION="${TAG#v}"
           case "$STORE" in
             chrome|edge)
-              PACKAGE="release-assets/mdpi-filter-${STORE}-v${VERSION}.zip"
+              PACKAGE="release-assets/notandia-${STORE}-v${VERSION}.zip"
               ;;
             firefox)
-              PACKAGE="release-assets/mdpi-filter-firefox-source-v${VERSION}.zip"
+              PACKAGE="release-assets/notandia-firefox-source-v${VERSION}.zip"
               ;;
             *)
               echo "Unsupported store: $STORE" >&2
@@ -108,8 +108,8 @@ jobs:
           fi
 
           umask 077
-          WORK_DIR="$RUNNER_TEMP/mdpi-filter-chrome-extension"
-          KEY_PATH="$RUNNER_TEMP/mdpi-filter-chrome-private-key.pem"
+          WORK_DIR="$RUNNER_TEMP/notandia-chrome-extension"
+          KEY_PATH="$RUNNER_TEMP/notandia-chrome-private-key.pem"
           OUTPUT_PATH="release-assets/$(basename "${SOURCE_ZIP%.zip}").crx"
           cleanup() {
             rm -rf "$WORK_DIR" "$KEY_PATH" "$WORK_DIR.crx"
