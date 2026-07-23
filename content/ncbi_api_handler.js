@@ -5,7 +5,7 @@
 
   const ENDPOINT = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/';
   const MDPI_DOI_PREFIX = '10.3390/';
-  const TOOL_NAME = 'mdpi-filter';
+  const TOOL_NAME = 'notandia';
   const BATCH_SIZE = 200;
   const MAX_IDS_PER_PAGE = 600;
   const MAX_CACHE_ENTRIES = 1000;
